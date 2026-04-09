@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import { useCartStore } from '@/lib/cartStore'; // Add this import
 
 // Types for API data
 interface HoplixProduct {
@@ -22,6 +23,7 @@ interface ProductType {
   images: Record<string, string>;
   availableColors: ColorType[];
   availableSizes: string[];
+  slug?: string; // Add slug for product links
 }
 
 interface ColorType {
@@ -106,6 +108,13 @@ function parseSizes(sizeString: string): string[] {
   return sizes;
 }
 
+// Helper to generate slug from product name
+function generateSlug(name: string): string {
+  return name.toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-');
+}
+
 // Zoom on Hover Component
 function ZoomableImage({ src, alt }: { src: string; alt: string }) {
   const [isZoomed, setIsZoomed] = useState(false);
@@ -168,6 +177,11 @@ export default function ProductCustomizer() {
   const [selectedColor, setSelectedColor] = useState<ColorType | null>(null);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [quantity, setQuantity] = useState(1);
+  const [isAdding, setIsAdding] = useState(false); // Add loading state
+  const [addedMessage, setAddedMessage] = useState(false); // Add success state
+
+  // Get cart functions
+  const addItem = useCartStore((state) => state.addItem);
 
   // Derive current image directly from selected product + color
   const currentImage =
@@ -194,10 +208,8 @@ export default function ProductCustomizer() {
         setLoading(true);
         setError(null);
         
-        // Use the campaign ID that we know has products (from your working slider)
         const campaignId = '00560566';
         
-        // ✅ FIX: Use the correct endpoint (campaigns with an 's')
         console.log(`🔍 Customizer fetching campaign: ${campaignId}`);
         const response = await fetch(`/api/campaigns/${campaignId}`);
 
@@ -215,6 +227,7 @@ export default function ProductCustomizer() {
           const transformedProducts: ProductType[] = campaignProducts.map((product: HoplixProduct) => {
             const availableColors = parseColors(product['product-color']);
             const availableSizes = parseSizes(product['product-size']);
+            const slug = generateSlug(product['product-name']);
 
             const baseImage = getBasePreviewImage(product);
             const images: Record<string, string> = {};
@@ -235,6 +248,7 @@ export default function ProductCustomizer() {
               images,
               availableColors,
               availableSizes,
+              slug,
             };
           });
 
@@ -296,13 +310,50 @@ export default function ProductCustomizer() {
     setActiveModal(null);
   };
 
+  // UPDATED: Working Add to Cart function
   const handleAddToCart = () => {
-    console.log('Adding to cart:', {
-      product: selectedProduct,
+    if (!selectedProduct) return;
+    
+    setIsAdding(true);
+    
+    // Create unique ID based on product + size + color
+    const cartItemId = `${selectedProduct.id}_${selectedSize}_${selectedColor?.code || 'default'}`;
+    
+    // Get the current image for this color
+    const productImage = selectedColor 
+      ? selectedProduct.images[selectedColor.imageKey] 
+      : Object.values(selectedProduct.images)[0];
+    
+    // Build product name with options
+    let productName = selectedProduct.name;
+    if (selectedSize) {
+      productName += ` - Taglia ${selectedSize}`;
+    }
+    if (selectedColor) {
+      productName += ` (${selectedColor.name})`;
+    }
+    
+    // Add to cart
+    addItem({
+      id: cartItemId,
+      productId: selectedProduct.id,
+      name: productName,
+      price: selectedProduct.price,
+      image: productImage || '/images/hero-1.png',
+      quantity: quantity,
+      slug: selectedProduct.slug,
       size: selectedSize,
-      color: selectedColor,
-      quantity,
+      color: selectedColor?.name,
     });
+    
+    // Show success message
+    setAddedMessage(true);
+    
+    // Reset button after 1.5 seconds
+    setTimeout(() => {
+      setIsAdding(false);
+      setAddedMessage(false);
+    }, 1500);
   };
 
   if (loading) {
@@ -506,7 +557,7 @@ export default function ProductCustomizer() {
                   </div>
                 </div>
 
-                {/* Price & Checkout */}
+                {/* Price & Checkout - UPDATED with working button */}
                 <div className="p-5 bg-primary/5 dark:bg-primary/10 rounded-xl border border-primary/20 dark:border-primary/30 transition-colors">
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-gray-600 dark:text-gray-300">Totale:</span>
@@ -516,9 +567,29 @@ export default function ProductCustomizer() {
                   </div>
                   <button
                     onClick={handleAddToCart}
-                    className="w-full py-4 rounded-xl bg-primary text-white font-semibold text-lg hover:bg-primary/90 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl dark:shadow-md"
+                    disabled={isAdding}
+                    className="w-full py-4 rounded-xl bg-primary text-white font-semibold text-lg hover:bg-primary/90 transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl dark:shadow-md disabled:opacity-70 disabled:cursor-not-allowed"
                   >
-                    🛒 Aggiungi al Carrello
+                    {isAdding ? (
+                      <>
+                        <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Aggiungo...
+                      </>
+                    ) : addedMessage ? (
+                      <>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Aggiunto!
+                      </>
+                    ) : (
+                      <>
+                        🛒 Aggiungi al Carrello
+                      </>
+                    )}
                   </button>
                 </div>
 

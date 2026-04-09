@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useCartStore } from '@/lib/cartStore';
 
 interface ProductCardProps {
   product: {
@@ -16,6 +17,7 @@ interface ProductCardProps {
     badgeColor?: string;
     rating?: number;
     reviews?: number;
+    campaignId?: string;
   };
   red?: boolean;
   showWishlist?: boolean;
@@ -31,6 +33,29 @@ export default function ProductCard({
   isInWishlist = false
 }: ProductCardProps) {
   const [imgError, setImgError] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const addItem = useCartStore((state) => state.addItem);
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault(); // Stop link navigation
+    e.stopPropagation(); // Stop event from bubbling up
+    e.nativeEvent.stopImmediatePropagation(); // Extra safety
+    
+    setIsAdding(true);
+    
+    addItem({
+      id: product.id,
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      quantity: 1,
+      slug: product.slug,
+      campaignId: product.campaignId,
+    });
+    
+    setTimeout(() => setIsAdding(false), 500);
+  };
 
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -43,7 +68,6 @@ export default function ProductCard({
   return (
     <div className="group border border-dark/20 dark:border-dark/60 rounded-md transition-transform hover:shadow-lg hover:-translate-y-1 duration-300 h-full flex flex-col relative">
       
-      {/* Wishlist Button */}
       {showWishlist && (
         <button
           onClick={handleWishlistClick}
@@ -66,7 +90,6 @@ export default function ProductCard({
         </button>
       )}
       
-      {/* Product Image */}
       <Link href={`/products/${product.slug}`} className="block flex-1">
         <div className="overflow-hidden rounded-t-md relative">
           <div className="relative aspect-square w-full bg-gray-100 dark:bg-gray-800">
@@ -93,13 +116,11 @@ export default function ProductCard({
           )}
         </div>
 
-        {/* Product Info */}
         <div className={`flex flex-col gap-y-3 p-4 rounded-b-md grow ${red ? 'bg-light dark:bg-dark' : ''}`}>
           <h3 className="min-h-12 text-base font-semibold text-dark dark:text-light line-clamp-2 group-hover:text-primary transition-colors">
             {product.name}
           </h3>
 
-          {/* Rating Stars */}
           {product.rating !== undefined && (
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-0.5">
@@ -135,18 +156,34 @@ export default function ProductCard({
             )}
           </div>
 
-          <div>
-            <span className="inline-flex items-center justify-center w-full gap-2 text-sm font-medium bg-primary/10 text-primary hover:bg-primary hover:text-white px-3 py-2 rounded-md transition-colors cursor-pointer">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              Aggiungi
-            </span>
+          {/* THE FIXED BUTTON - now prevents navigation */}
+          <div onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={handleAddToCart}
+              disabled={isAdding}
+              className="inline-flex items-center justify-center w-full gap-2 text-sm font-medium bg-primary/10 text-primary hover:bg-primary hover:text-white px-3 py-2 rounded-md transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isAdding ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Aggiungo...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  Aggiungi
+                </>
+              )}
+            </button>
           </div>
         </div>
       </Link>
 
-      {/* Hover Bar */}
       <div className="relative">
         <div className={`h-1 w-full rounded-b-md overflow-hidden relative
                     after:absolute after:inset-0 ${red ? 'after:bg-light dark:after:bg-dark bg-primary' : 'after:bg-primary bg-dark/20 dark:bg-light/20'}

@@ -3,15 +3,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import {useState, useEffect} from "react";
+import { useCartStore } from '@/lib/cartStore';
 
 export default function Header() {
     const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-    const [cartItems, setCartItems] = useState(0);
     const [wishlistItems, setWishlistItems] = useState(0);
+    const cartItemsCount = useCartStore((state) => state.getTotalItems());
 
     const applyTheme = (newTheme: 'light' | 'dark') => {
         const html = document.documentElement;
-        console.log('Applying theme:', newTheme); // Debug log
         
         if (newTheme === 'dark') {
             html.classList.add('dark');
@@ -28,10 +28,8 @@ export default function Header() {
     };
 
     useEffect(() => {
-        // Check if we're in browser environment
         if (typeof window !== 'undefined') {
             const storedTheme = sessionStorage.getItem('theme') as 'light' | 'dark' || 'dark';
-            
             setTheme(storedTheme);
             applyTheme(storedTheme);
         }
@@ -105,9 +103,9 @@ export default function Header() {
                 />
               </svg>
               
-              {cartItems > 0 && (
+              {cartItemsCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-primary text-light text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {cartItems}
+                  {cartItemsCount}
                 </span>
               )}
             </Link>

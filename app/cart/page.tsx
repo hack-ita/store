@@ -4,45 +4,16 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
-// Mock cart data (will be replaced with actual cart state later)
-const mockCartItems = [
-  {
-    id: 1,
-    name: 'T-Shirt Tech HackITa',
-    slug: 'tshirt-tech-hackita',
-    image: '/images/hero-1.png',
-    price: 29.99,
-    quantity: 2,
-    size: 'M',
-    color: 'Black',
-  },
-  {
-    id: 2,
-    name: 'Tazza Smart Mug',
-    slug: 'tazza-smart-mug',
-    image: '/images/hero-2.png',
-    price: 19.99,
-    quantity: 1,
-    size: 'One Size',
-    color: 'Black',
-  },
-];
-
-interface CartItem {
-  id: number;
-  name: string;
-  slug: string;
-  image: string;
-  price: number;
-  quantity: number;
-  size: string;
-  color: string;
-}
+import { useCartStore } from '@/lib/cartStore';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const [cartItems, setCartItems] = useState<CartItem[]>(mockCartItems);
+  
+  const cartItems = useCartStore((state) => state.items);
+  const removeItem = useCartStore((state) => state.removeItem);
+  const updateQuantity = useCartStore((state) => state.updateQuantity);
+  const clearCart = useCartStore((state) => state.clearCart);
+  
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -58,23 +29,18 @@ export default function CheckoutPage() {
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = subtotal > 50 ? 0 : 5.99;
-  const tax = subtotal * 0.22; // 22% VAT
+  const tax = subtotal * 0.22;
   const total = subtotal + shipping + tax;
 
-  const updateQuantity = (id: number, newQuantity: number) => {
+  const handleQuantityUpdate = (id: string, newQuantity: number) => {
     if (newQuantity < 1) return;
-    setCartItems(items =>
-      items.map(item =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
+    updateQuantity(id, newQuantity);
   };
 
-  const removeItem = (id: number) => {
-    setCartItems(items => items.filter(item => item.id !== id));
+  const handleRemoveItem = (id: string) => {
+    removeItem(id);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -88,16 +54,58 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Order placed:', { items: cartItems, total, customer: formData });
+
+    try {
+      // Create Stripe checkout session
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: cartItems.map(item => ({
+            id: item.id,
+            productId: item.productId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.image,
+            size: item.size,
+            color: item.color,
+            campaignId: item.campaignId || '00560566',
+          })),
+          customer: {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            address: formData.address,
+            city: formData.city,
+            postalCode: formData.postalCode,
+            country: formData.country,
+          },
+          shippingCost: shipping,
+          tax: tax,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        // Clear cart before redirecting to Stripe
+        clearCart();
+        // Redirect to Stripe checkout
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL received');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('Si è verificato un errore. Riprova più tardi.');
+    } finally {
       setIsProcessing(false);
-      router.push('/checkout/success');
-    }, 2000);
+    }
   };
 
-  if (cartItems.length === 0) {
+  if (cartItems.length === 0 && step === 1) {
     return (
       <main className="min-h-screen bg-light dark:bg-dark py-20 px-5">
         <div className="max-w-4xl mx-auto text-center">
@@ -123,7 +131,6 @@ export default function CheckoutPage() {
     <main className="min-h-screen bg-light dark:bg-dark mt-36 pb-12 px-5">
       <div className="max-w-7xl mx-auto">
         
-        {/* Header */}
         <div className="text-center mb-10">
           <h1 className="text-3xl lg:text-4xl font-bold text-dark dark:text-light mb-2">
             Checkout
@@ -133,7 +140,6 @@ export default function CheckoutPage() {
           </p>
         </div>
 
-        {/* Step Indicators */}
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-4">
             {[1, 2].map((s) => (
@@ -161,10 +167,8 @@ export default function CheckoutPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Left Column - Form */}
           <div className="lg:col-span-2">
             {step === 1 ? (
-              // Step 1: Cart Review
               <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm">
                 <h2 className="text-xl font-bold mb-4 text-dark dark:text-light">
                   Rivedi il tuo ordine
@@ -183,25 +187,28 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex-1">
                         <Link
-                          href={`/products/${item.slug}`}
+                          href={`/products/${item.slug || item.productId}`}
                           className="font-semibold text-dark dark:text-light hover:text-primary transition-colors"
                         >
                           {item.name}
                         </Link>
                         <div className="text-sm text-dark/60 dark:text-light/60 mt-1">
-                          Taglia: {item.size} | Colore: {item.color}
+                          {item.size && `Taglia: ${item.size}`} 
+                          {item.size && item.color && ' | '}
+                          {item.color && `Colore: ${item.color}`}
+                          {!item.size && !item.color && 'Prodotto standard'}
                         </div>
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              onClick={() => handleQuantityUpdate(item.id, item.quantity - 1)}
                               className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-primary/20 transition-colors"
                             >
                               -
                             </button>
                             <span className="w-8 text-center">{item.quantity}</span>
                             <button
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              onClick={() => handleQuantityUpdate(item.id, item.quantity + 1)}
                               className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-primary/20 transition-colors"
                             >
                               +
@@ -212,7 +219,7 @@ export default function CheckoutPage() {
                               €{(item.price * item.quantity).toFixed(2)}
                             </div>
                             <button
-                              onClick={() => removeItem(item.id)}
+                              onClick={() => handleRemoveItem(item.id)}
                               className="text-xs text-red-500 hover:text-red-600 mt-1"
                             >
                               Rimuovi
@@ -232,7 +239,6 @@ export default function CheckoutPage() {
                 </button>
               </div>
             ) : (
-              // Step 2: Shipping & Payment Form
               <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm">
                 <h2 className="text-xl font-bold mb-4 text-dark dark:text-light">
                   Dati di spedizione
@@ -348,59 +354,6 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                <h2 className="text-xl font-bold mt-6 mb-4 text-dark dark:text-light">
-                  Metodo di pagamento
-                </h2>
-                
-                <div className="space-y-3">
-                  <label className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="card"
-                      checked={formData.paymentMethod === 'card'}
-                      onChange={handleInputChange}
-                      className="text-primary"
-                    />
-                    <span className="text-dark dark:text-light">💳 Carta di credito/debito</span>
-                  </label>
-                  <label className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="paypal"
-                      checked={formData.paymentMethod === 'paypal'}
-                      onChange={handleInputChange}
-                      className="text-primary"
-                    />
-                    <span className="text-dark dark:text-light">💰 PayPal</span>
-                  </label>
-                  <label className="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="bank"
-                      checked={formData.paymentMethod === 'bank'}
-                      onChange={handleInputChange}
-                      className="text-primary"
-                    />
-                    <span className="text-dark dark:text-light">🏦 Bonifico bancario</span>
-                  </label>
-                </div>
-
-                <label className="flex items-center gap-2 mt-4">
-                  <input
-                    type="checkbox"
-                    name="saveInfo"
-                    checked={formData.saveInfo}
-                    onChange={handleInputChange}
-                    className="text-primary"
-                  />
-                  <span className="text-sm text-dark/70 dark:text-light/70">
-                    Salva i miei dati per la prossima volta
-                  </span>
-                </label>
-
                 <div className="flex gap-4 mt-6">
                   <button
                     type="button"
@@ -414,14 +367,13 @@ export default function CheckoutPage() {
                     disabled={isProcessing}
                     className="flex-1 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isProcessing ? 'Elaborazione...' : `Paga €${total.toFixed(2)}`}
+                    {isProcessing ? 'Elaborazione...' : `Procedi al pagamento €${total.toFixed(2)}`}
                   </button>
                 </div>
               </form>
             )}
           </div>
 
-          {/* Right Column - Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm sticky top-28">
               <h2 className="text-xl font-bold mb-4 text-dark dark:text-light">

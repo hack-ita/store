@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import DOMPurify from 'dompurify';
+import { useCartStore } from '@/lib/cartStore'; // Add this import
 
 interface ProductDetailClientProps {
   initialProduct: {
@@ -119,6 +120,11 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
+  const [isAdding, setIsAdding] = useState(false); // Add loading state
+  const [addedMessage, setAddedMessage] = useState(false); // Show success message
+  
+  // Get addItem function from cart store
+  const addItem = useCartStore((state) => state.addItem);
 
   // Sanitize and render HTML description
   const renderDescription = () => {
@@ -128,12 +134,32 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   };
 
   const handleAddToCart = () => {
-    console.log('Adding to cart:', {
-      product,
-      size: selectedSize,
-      color: selectedColor,
-      quantity,
+    if (!product) return;
+    
+    setIsAdding(true);
+    
+    // Create unique ID based on product + size + color
+    const cartItemId = `${product.id}_${selectedSize}_${selectedColor?.name || 'default'}`;
+    
+    // Add to cart
+    addItem({
+      id: cartItemId,
+      productId: product.id,
+      name: `${product.name}${selectedSize ? ` - Taglia ${selectedSize}` : ''}${selectedColor?.name ? ` (${selectedColor.name})` : ''}`,
+      price: product.price,
+      image: product.images[0] || product.image,
+      quantity: quantity,
+      slug: product.slug,
     });
+    
+    // Show success message
+    setAddedMessage(true);
+    
+    // Reset button after 1.5 seconds
+    setTimeout(() => {
+      setIsAdding(false);
+      setAddedMessage(false);
+    }, 1500);
   };
 
   if (!product) {
@@ -234,7 +260,11 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                   </div>
                   <div className="flex flex-wrap gap-3">
                     {product.sizes.map(size => (
-                      <button key={size} onClick={() => setSelectedSize(size)} className={`w-12 h-12 rounded-lg font-medium transition-all ${selectedSize === size ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-800 text-dark dark:text-light hover:bg-primary/20'}`}>
+                      <button 
+                        key={size} 
+                        onClick={() => setSelectedSize(size)} 
+                        className={`w-12 h-12 rounded-lg font-medium transition-all ${selectedSize === size ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-800 text-dark dark:text-light hover:bg-primary/20'}`}
+                      >
                         {size}
                       </button>
                     ))}
@@ -248,26 +278,68 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                   <h3 className="font-semibold text-dark dark:text-light">Colore</h3>
                   <div className="flex flex-wrap gap-3">
                     {product.colors.map(color => (
-                      <button key={color.name} onClick={() => setSelectedColor(color)} className={`w-10 h-10 rounded-full transition-all ${selectedColor?.name === color.name ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-dark scale-110' : 'hover:scale-105'} ${color.colorClass}`} title={color.name} />
+                      <button 
+                        key={color.name} 
+                        onClick={() => setSelectedColor(color)} 
+                        className={`w-10 h-10 rounded-full transition-all ${selectedColor?.name === color.name ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-dark scale-110' : 'hover:scale-105'} ${color.colorClass}`} 
+                        title={color.name} 
+                      />
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Quantity & Add to Cart */}
+              {/* Quantity & Add to Cart - UPDATED with working button */}
               <div className="space-y-4 pt-4">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center border border-dark/20 dark:border-light/20 rounded-lg">
-                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">-</button>
+                    <button 
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))} 
+                      className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      -
+                    </button>
                     <span className="w-12 text-center font-medium">{quantity}</span>
-                    <button onClick={() => setQuantity(quantity + 1)} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">+</button>
+                    <button 
+                      onClick={() => setQuantity(quantity + 1)} 
+                      className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      +
+                    </button>
                   </div>
-                  <button onClick={handleAddToCart} className="flex-1 py-4 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                    Aggiungi al Carrello
+                  <button 
+                    onClick={handleAddToCart} 
+                    disabled={isAdding}
+                    className="flex-1 py-4 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {isAdding ? (
+                      <>
+                        <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Aggiungo...
+                      </>
+                    ) : addedMessage ? (
+                      <>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Aggiunto!
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Aggiungi al Carrello
+                      </>
+                    )}
                   </button>
                 </div>
-                <p className="text-sm text-dark/50 dark:text-light/50 text-center">{product.inStock ? '✅ Disponibile' : '❌ Esaurito'}</p>
+                <p className="text-sm text-dark/50 dark:text-light/50 text-center">
+                  {product.inStock ? '✅ Disponibile' : '❌ Esaurito'}
+                </p>
               </div>
 
               {/* Features */}
@@ -276,7 +348,9 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                 <ul className="space-y-2">
                   {product.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-dark/70 dark:text-light/70">
-                      <svg className="w-5 h-5 text-primary mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      <svg className="w-5 h-5 text-primary mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
                       {formatFeature(feature)}
                     </li>
                   ))}
