@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ===========================
+   THEME VARIABLES
+=========================== */
+@theme {
+  /* Reference the CSS variables from next/font */
+  --font-heading: var(--font-oswald, 'Oswald', sans-serif);
+  --font-body: var(--font-ubuntu, 'Ubuntu', sans-serif);
+
+  --color-primary: #FD0001;
+  --color-secondary: #C9A941;
+  --color-light: #EDF2F4;
+  --color-dark: #111111;
+  --color-accent: #111111;
+
+  --breakpoint-max: 118.75rem;
+
+  --animate-underline-slide: underline-slide 2s linear infinite;
+
+  --animate-fadeIn: fadeIn 0.2s ease-out;
+
+  @keyframes underline-slide {
+    0% {
+      transform: translateX(-100%);
+    }
+
+    20% {
+      transform: translateX(0%);
+    }
+
+    40% {
+      transform: translateX(100%);
+    }
+
+    60% {
+      transform: translateX(200%);
+    }
+
+    80% {
+      transform: translateX(100%);
+    }
+
+    100% {
+      transform: translateX(-100%);
+    }
+  
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+/* ===========================
+   GLOBAL
+=========================== */
+* {
+  scrollbar-color: var(--color-primary) var(--color-light-bg);
+  @variant dark {
+    scrollbar-color: var(--color-primary) var(--color-accent);
+  }
+  scrollbar-width: thin;
+}
+
+/* ===========================
+   TYPOGRAPHY
+=========================== */
+h1, h2, h3, h4, h5, h6, .heading, .heading-sm, .hero-heading {
+  @apply font-heading;
+}
+
+* {
+  @apply font-body;
+}
+
+/* Large headings */
+h1, h2 {
+  @apply text-[max(50px,min(80px,5vw))] tracking-[0.25px] font-bold leading-none text-pretty;
+}
+
+.hero-heading {
+  @apply text-[max(30px,min(30px,5vw))] tracking-[0.25px] font-bold leading-none text-pretty;
+}
+
+.heading-sm {
+  @apply text-[max(20px,min(20px,1vw))] leading-none uppercase font-bold text-pretty;
+}
+
+/* ===========================
+   GLASS / HEADER EFFECTS
+=========================== */
+.header-glass {
+  @apply bg-light/5 dark:bg-dark/60 bg-clip-padding backdrop-filter backdrop-blur-sm;
+}
+
+.menu-glass {
+  @apply bg-light/60 dark:bg-dark/60 bg-clip-padding backdrop-filter backdrop-blur-2xl lg:bg-transparent dark:lg:bg-transparent lg:bg-clip-border lg:backdrop-blur-none;
+}
+
+.bg-glass {
+  @apply bg-dark/5 dark:bg-light/5 bg-clip-padding backdrop-filter backdrop-blur-sm;
+}
