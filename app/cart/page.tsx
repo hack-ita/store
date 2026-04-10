@@ -107,7 +107,7 @@ export default function CheckoutPage() {
 
   if (cartItems.length === 0 && step === 1) {
     return (
-      <main className="min-h-screen bg-light dark:bg-dark py-20 px-5">
+      <main className="min-h-screen bg-light dark:bg-dark py-20 px-5 mt-32">
         <div className="max-w-4xl mx-auto text-center">
           <div className="text-6xl mb-6">🛒</div>
           <h1 className="text-3xl font-bold mb-4 text-dark dark:text-light">

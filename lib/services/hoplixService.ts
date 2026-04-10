@@ -10,6 +10,7 @@ export interface HoplixProduct {
   'printable-area': string;
   orientation: string;
   weight: string;
+  preview?: Array<Record<string, string>>;
 }
 
 export interface HoplixProductResponse {
@@ -164,6 +165,13 @@ class HoplixService {
     console.log(`📤 POST ${url}`);
     console.log(`📤 Payload keys:`, Object.keys({ api: '***', secret: '***', ...data }));
 
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.error(`❌ Request timeout for ${endpoint}`);
+      controller.abort();
+    }, 30000); // 30 second timeout
+
     try {
       const fetchOptions: RequestInit = {
         method: 'POST',
@@ -171,6 +179,7 @@ class HoplixService {
           'Content-Type': 'application/json',
         },
         body: payload,
+        signal: controller.signal,
       };
       
       if (noCache) {
@@ -178,6 +187,7 @@ class HoplixService {
       }
       
       const response = await fetch(url, fetchOptions);
+      clearTimeout(timeoutId);
 
       const text = await response.text();
       console.log(`📥 Response status: ${response.status}`);
@@ -196,7 +206,6 @@ class HoplixService {
         throw new Error('Invalid JSON response from API');
       }
       
-      // Only log status if it exists (some endpoints don't have a status property)
       if (responseData.status) {
         console.log('📥 Response status from API:', responseData.status);
         
@@ -209,6 +218,11 @@ class HoplixService {
       
       return responseData;
     } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error(`❌ Request timeout for ${endpoint} after 30 seconds`);
+        throw new Error(`Request timeout for ${endpoint}`);
+      }
       console.error('❌ Network error in request:', error);
       throw error;
     }
@@ -291,20 +305,16 @@ class HoplixService {
       
       console.log('📋 Raw campaigns response type:', Array.isArray(response) ? 'Array' : typeof response);
       
-      // The API returns an array directly, not an object with a status property
       if (Array.isArray(response)) {
         console.log(`✅ Found ${response.length} campaigns`);
         return response;
       }
       
-      // Handle case where response might be wrapped in an object
       if (response && typeof response === 'object') {
-        // If it has a campaigns property that's an array
         if (response.campaigns && Array.isArray(response.campaigns)) {
           console.log(`✅ Found ${response.campaigns.length} campaigns`);
           return response.campaigns;
         }
-        // If it's a single campaign object
         if (response.id_campaign || response.campaign_id) {
           console.log(`✅ Found 1 campaign`);
           return [response];

@@ -1,23 +1,23 @@
-import type { NextConfig } from 'next';
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'd29gv5mnjp8nf8.cloudfront.net',
+        hostname: 'api.hoplix.com',
         port: '',
-        pathname: '/**',
+        pathname: '/v1/preview/**',
       },
-      // Add other domains if needed
       {
         protocol: 'https',
-        hostname: 'placehold.co',
+        hostname: 'd29gv5mnjp8nf8.cloudfront.net',
         port: '',
         pathname: '/**',
       },
     ],
   },
+  staticPageGenerationTimeout: 120,
 };
 
 export default nextConfig;

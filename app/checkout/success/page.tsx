@@ -27,7 +27,7 @@ function SuccessContent() {
         </p>
         
         {sessionId && (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 mb-8 max-w-md mx-auto">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 mb-8 px-5 min-w-md mx-auto flex flex-col justify-center items-center">
             <p className="text-sm text-dark/60 dark:text-light/60">
               ID Transazione: <span className="font-mono text-xs">{sessionId}</span>
             </p>
@@ -50,7 +50,7 @@ function SuccessContent() {
 // Loading fallback while suspense is waiting
 function SuccessLoading() {
   return (
-    <main className="min-h-screen bg-light dark:bg-dark py-20 px-5">
+    <main className="min-h-screen bg-light dark:bg-dark py-20 px-5 mt-32">
       <div className="max-w-4xl mx-auto text-center">
         <div className="text-6xl mb-6 animate-spin">⏳</div>
         <h1 className="text-3xl font-bold mb-4 text-dark dark:text-light">

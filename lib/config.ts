@@ -1,15 +1,8 @@
 // lib/config.ts
 export const config = {
+  // Always use real API - removed the condition
+  useRealApi: true,
   hoplixApiKey: process.env.HOPLIX_API_KEY,
   hoplixApiSecret: process.env.HOPLIX_API_SECRET,
-  useRealApi: process.env.NEXT_PUBLIC_USE_REAL_API === 'true',
+  hoplixCampaignId: process.env.HOPLIX_CAMPAIGN_ID || '00560566',
 };
-
-// Log config on server-side only
-if (typeof window === 'undefined') {
-  console.log('🔧 Config loaded:', {
-    useRealApi: config.useRealApi,
-    hasApiKey: !!config.hoplixApiKey,
-    hasApiSecret: !!config.hoplixApiSecret,
-  });
-}

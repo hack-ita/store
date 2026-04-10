@@ -24,35 +24,52 @@ export interface AppProduct {
   baseCost: number;
 }
 
-// Helper to generate preview URL for a product and color
-function getProductPreviewUrl(productCode: string, color: string): string {
-  return `https://api.hoplix.com/v1/preview/${productCode}/${color}.png`;
+// Build a color-specific image URL by swapping the color segment in the Hoplix CDN URL.
+// CDN pattern: /showimaged/Front/{campaignId}/{productSlug}/{color}/{size}/
+function buildImageUrl(baseUrl: string, colorCode: string): string {
+  if (!baseUrl) return '';
+  return baseUrl.replace(/\/([^/]+)(\/\d+\/)$/, `/${colorCode}$2`);
 }
 
-// Helper to generate a fallback image (for development)
-function getFallbackImage(productCode: string): string {
-  const fallbackMap: Record<string, string> = {
-    'maglietta-unisex': '/images/hero-1.png',
-    'felpa-unisex-con-capuccio': '/images/hero-3.png',
-    'tazza-bianca': '/images/hero-2.png',
-    't-shirt-unisex': '/images/hero-1.png',
-    'tazza-nera': '/images/hero-2.png',
-  };
-  return fallbackMap[productCode] || '/images/hero-1.png';
+// Get the base CDN URL from a product's preview object (always the black/first color variant)
+function getBaseImageFromPreview(preview: Array<Record<string, string>> | undefined): string {
+  if (!preview || !preview[0]) return '';
+  const anyFrontKey = Object.keys(preview[0]).find(key => key.startsWith('front-'));
+  return anyFrontKey ? preview[0][anyFrontKey] : '';
 }
 
-function parseHoplixColors(colorsStr: string): Array<{ name: string; code: string; colorClass: string; imageKey: string }> {
-  const colorNames = colorsStr.split(',');
-  return colorNames.slice(0, 6).map(name => ({
-    name: name.charAt(0).toUpperCase() + name.slice(1),
-    code: getColorCode(name),
-    colorClass: `bg-${name}`,
-    imageKey: name,
-  }));
+// Helper to parse colors from API response
+function parseColors(colorString: string): Array<{ name: string; code: string; colorClass: string; imageKey: string }> {
+  if (!colorString) return [];
+
+  const colorNames = colorString.split(',');
+  return colorNames.slice(0, 6).map(name => {
+    const trimmed = name.trim().toLowerCase();
+    return {
+      name: trimmed.charAt(0).toUpperCase() + trimmed.slice(1),
+      code: getColorCode(trimmed),
+      colorClass: `bg-${trimmed}`,
+      imageKey: trimmed,
+    };
+  });
 }
 
-function parseHoplixSizes(sizesStr: string): string[] {
-  return sizesStr.split(',');
+// Helper to parse sizes from API response
+function parseSizes(sizeString: string): string[] {
+  if (!sizeString) return [];
+
+  const sizes = sizeString.split(',').map(s => s.trim());
+  const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'];
+  sizes.sort((a, b) => {
+    const indexA = sizeOrder.indexOf(a);
+    const indexB = sizeOrder.indexOf(b);
+    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+    if (indexA !== -1) return -1;
+    if (indexB !== -1) return 1;
+    return a.localeCompare(b);
+  });
+
+  return sizes;
 }
 
 function getColorCode(colorName: string): string {
@@ -81,32 +98,27 @@ function getColorCode(colorName: string): string {
   return colorMap[colorName] || '#CCCCCC';
 }
 
-function transformToAppProduct(hoplixProduct: HoplixProduct, useRealImages: boolean = true): AppProduct {
+function transformToAppProduct(hoplixProduct: HoplixProduct): AppProduct {
   const slug = hoplixProduct['product-code'].toLowerCase().replace(/_/g, '-');
-  const colors = parseHoplixColors(hoplixProduct.colors);
-  const sizes = parseHoplixSizes(hoplixProduct.sizes);
+  const colors = parseColors(hoplixProduct.colors);
+  const sizes = parseSizes(hoplixProduct.sizes);
   const baseCost = parseFloat(hoplixProduct['base-cost']);
   const sellingPrice = Math.round((baseCost + 15) * 100) / 100;
-  
-  let mainImage: string;
-  let allImages: string[];
-  
-  if (useRealImages) {
-    allImages = colors.map(color => getProductPreviewUrl(hoplixProduct['product-code'], color.imageKey));
-    mainImage = allImages[0] || getFallbackImage(hoplixProduct['product-code']);
-  } else {
-    const fallback = getFallbackImage(hoplixProduct['product-code']);
-    mainImage = fallback;
-    allImages = [fallback];
-  }
-  
+
+  // Get base image from preview and build per-color URLs
+  const baseImage = getBaseImageFromPreview(hoplixProduct.preview);
+  const allImages = colors.map(color =>
+    buildImageUrl(baseImage, color.imageKey) || baseImage || '/images/hero-1.png'
+  );
+  const mainImage = allImages[0] || baseImage || '/images/hero-1.png';
+
   // Determine category and badge
   let category = 'Prodotti';
   let badge = '';
   let badgeColor = '';
   const name = hoplixProduct.name.toLowerCase();
   const productCode = hoplixProduct['product-code'].toLowerCase();
-  
+
   if (name.includes('felpa') || name.includes('hoodie') || productCode.includes('felpa')) {
     category = 'Più Venduti';
     badge = '⭐ Best Seller';
@@ -124,7 +136,7 @@ function transformToAppProduct(hoplixProduct: HoplixProduct, useRealImages: bool
     badge = '💸 Sale';
     badgeColor = 'text-green-500';
   }
-  
+
   return {
     id: hoplixProduct['product-code'],
     name: hoplixProduct.name,
@@ -153,86 +165,7 @@ function transformToAppProduct(hoplixProduct: HoplixProduct, useRealImages: bool
   };
 }
 
-// Mock data for development/fallback
-function getMockProducts(): AppProduct[] {
-  return [
-    {
-      id: 'maglietta-unisex',
-      name: 'T-Shirt Unisex',
-      slug: 't-shirt-unisex',
-      image: '/images/hero-1.png',
-      images: ['/images/hero-1.png'],
-      price: 29.99,
-      originalPrice: null,
-      category: 'Nuovi Arrivi',
-      categorySlug: 'new-arrivals',
-      badge: '🔥 Hot',
-      badgeColor: 'text-orange-500',
-      description: 'Soft t-shirt with no side seams, in sturdy cotton jersey.',
-      features: ['100% ring-spun cotton', 'Tubular fabric', 'Washable at 30 degrees'],
-      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-      colors: [
-        { name: 'Black', code: '#000000', colorClass: 'bg-black', imageKey: 'black' },
-        { name: 'White', code: '#FFFFFF', colorClass: 'bg-white border border-gray-300', imageKey: 'white' },
-        { name: 'Red', code: '#FF0000', colorClass: 'bg-red-600', imageKey: 'red' },
-      ],
-      rating: 4.5,
-      reviews: 24,
-      inStock: true,
-      productCode: 'maglietta-unisex',
-      baseCost: 7.5,
-    },
-    {
-      id: 'felpa-unisex-con-capuccio',
-      name: 'Felpa Unisex con Cappuccio',
-      slug: 'felpa-unisex-con-cappuccio',
-      image: '/images/hero-3.png',
-      images: ['/images/hero-3.png'],
-      price: 49.99,
-      originalPrice: null,
-      category: 'Più Venduti',
-      categorySlug: 'best-sellers',
-      badge: '⭐ Best Seller',
-      badgeColor: 'text-yellow-500',
-      description: 'Durable combination of ring-spun cotton and polyester hoodie.',
-      features: ['80% Ringspun cotton, 20% polyester', 'Kangaroo pocket'],
-      sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-      colors: [
-        { name: 'Black', code: '#000000', colorClass: 'bg-black', imageKey: 'black' },
-        { name: 'Navy', code: '#000080', colorClass: 'bg-blue-900', imageKey: 'navy' },
-      ],
-      rating: 4.8,
-      reviews: 156,
-      inStock: true,
-      productCode: 'felpa-unisex-con-capuccio',
-      baseCost: 16.9,
-    },
-    {
-      id: 'tazza-bianca',
-      name: 'Tazza',
-      slug: 'tazza',
-      image: '/images/hero-2.png',
-      images: ['/images/hero-2.png'],
-      price: 19.99,
-      originalPrice: null,
-      category: 'Nuovi Arrivi',
-      categorySlug: 'new-arrivals',
-      badge: '🔥 Hot',
-      badgeColor: 'text-orange-500',
-      description: 'White ceramic mug, microwave-safe.',
-      features: ['Microwave safe', 'Food certified'],
-      sizes: ['One Size'],
-      colors: [{ name: 'White', code: '#FFFFFF', colorClass: 'bg-white border border-gray-300', imageKey: 'white' }],
-      rating: 4.7,
-      reviews: 89,
-      inStock: true,
-      productCode: 'tazza-bianca',
-      baseCost: 5.5,
-    },
-  ];
-}
-
-// Initialize hoplixService if credentials are available
+// Initialize hoplixService
 if (config.hoplixApiKey && config.hoplixApiSecret) {
   hoplixService.initialize(config.hoplixApiKey, config.hoplixApiSecret);
   console.log('✅ HoplixService initialized from productService');
@@ -241,46 +174,46 @@ if (config.hoplixApiKey && config.hoplixApiSecret) {
 export const productService = {
   async getAllProducts(): Promise<AppProduct[]> {
     console.log('🔍 productService.getAllProducts() called');
-    console.log('🔍 config.useRealApi:', config.useRealApi);
     console.log('🔍 hoplixService.isConfigured():', hoplixService.isConfigured());
-    
-    if (!config.useRealApi) {
-      console.log('📦 Using mock product data (API disabled by config)');
-      return getMockProducts();
-    }
-    
+
     if (!hoplixService.isConfigured()) {
-      console.warn('⚠️ Hoplix service not configured, falling back to mock data');
-      return getMockProducts();
+      console.warn('⚠️ Hoplix service not configured');
+      return [];
     }
 
     try {
-      // Use the campaign ID from env or default
-      const campaignId = process.env.HOPLIX_CAMPAIGN_ID || '00542388';
-      
+      const campaignId = config.hoplixCampaignId || process.env.HOPLIX_CAMPAIGN_ID || '00560566';
+
       console.log(`🌐 Fetching campaign: ${campaignId}`);
       const campaign = await hoplixService.getCampaign(campaignId);
-      
+
       if (campaign && campaign.products) {
         console.log(`✅ Found ${campaign.products.length} products in campaign`);
-        
-        // Transform campaign products to AppProduct format
+
         const products: AppProduct[] = campaign.products.map((product: any) => {
-          const firstColor = product['product-color']?.split(',')[0] || 'black';
-          const previewKey = `front-${firstColor}`;
-          const previewImage = product.preview?.[0]?.[previewKey] || '';
-          
-          // Generate slug from product name
-          const slug = product['product-name'].toLowerCase()
+          // Get base CDN image from preview data and build per-color URLs
+          const baseImage = getBaseImageFromPreview(product.preview);
+          const colors = parseColors(product['product-color'] || '');
+          const sizes = parseSizes(product['product-size'] || '');
+
+          const allImages = colors.map(color =>
+            buildImageUrl(baseImage, color.imageKey) || baseImage || '/images/hero-1.png'
+          );
+          const mainImage = allImages[0] || baseImage || '/images/hero-1.png';
+
+          console.log(`🖼️ Product "${product['product-name']}" mainImage: ${mainImage}`);
+
+          const slug = product['product-name']
+            .toLowerCase()
             .replace(/[^\w\s-]/g, '')
             .replace(/\s+/g, '-');
-          
+
           return {
             id: product['product-id'],
             name: product['product-name'],
             slug: slug,
-            image: previewImage || '/images/hero-1.png',
-            images: [previewImage || '/images/hero-1.png'],
+            image: mainImage,
+            images: allImages.length > 0 ? allImages : [mainImage],
             price: parseFloat(product['product-price']),
             originalPrice: null,
             category: campaign.name || 'Featured',
@@ -290,16 +223,11 @@ export const productService = {
             description: campaign.description || '',
             features: [
               `Product Code: ${product['product-code']}`,
-              `Available Colors: ${product['product-color']}`,
-              `Available Sizes: ${product['product-size']}`,
+              `Available Colors: ${product['product-color'] || ''}`,
+              `Available Sizes: ${product['product-size'] || ''}`,
             ],
-            sizes: product['product-size']?.split(',') || ['S', 'M', 'L', 'XL'],
-            colors: product['product-color']?.split(',').map((color: string) => ({
-              name: color.charAt(0).toUpperCase() + color.slice(1),
-              code: getColorCode(color),
-              colorClass: `bg-${color}`,
-              imageKey: color,
-            })) || [],
+            sizes: sizes,
+            colors: colors,
             rating: 4.5,
             reviews: 0,
             inStock: true,
@@ -307,37 +235,32 @@ export const productService = {
             baseCost: 0,
           };
         });
-        
+
         if (products.length > 0) {
           return products;
         }
       }
-      
+
       console.warn('No products found in campaign');
-      return getMockProducts();
+      return [];
     } catch (error) {
       console.error('❌ Error fetching from Hoplix API:', error);
-      return getMockProducts();
+      return [];
     }
   },
-  
+
   async getProduct(productCode: string): Promise<AppProduct | null> {
     console.log(`🔍 Getting product: ${productCode}`);
-    
-    if (!config.useRealApi) {
-      const mockProducts = getMockProducts();
-      return mockProducts.find(p => p.productCode === productCode) || null;
-    }
-    
+
     if (!hoplixService.isConfigured()) {
-      const mockProducts = getMockProducts();
-      return mockProducts.find(p => p.productCode === productCode) || null;
+      console.warn('⚠️ Hoplix service not configured');
+      return null;
     }
-    
+
     try {
       const result = await hoplixService.getProduct(productCode);
       if (result.product) {
-        return transformToAppProduct(result.product, true);
+        return transformToAppProduct(result.product);
       }
       return null;
     } catch (error) {
@@ -345,12 +268,12 @@ export const productService = {
       return null;
     }
   },
-  
+
   async getProductBySlug(slug: string): Promise<AppProduct | null> {
     const products = await this.getAllProducts();
     return products.find(p => p.slug === slug) || null;
   },
-  
+
   async getProductsByCategory(category: string): Promise<AppProduct[]> {
     const products = await this.getAllProducts();
     return products.filter(p => p.category === category);
