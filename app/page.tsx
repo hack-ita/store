@@ -1,6 +1,8 @@
 import HeroSlider from '@/components/HeroSlider';
 import ProductSliderWrapper from '@/components/ProductSliderWrapper';
 import ProductCustomizer from '@/components/ProductCustomizer';
+import MixMatch from '@/components/MixMatch';
+import MasonryGrid from '@/components/MasonaryGrid';
 
 export default function Home() {
   return (
@@ -13,15 +15,9 @@ export default function Home() {
         showWishlist={true}
       />
       
-      {/* More sections will go here */}
       <div>
-        {/* Placeholder for more content */}
         <ProductCustomizer />
-        <ProductSliderWrapper
-          title="Ultime"
-          subtitle="Scopri le ultime novità del nostro store"
-          showWishlist={true}
-        />
+        <MixMatch />
       </div>
     </main>
   );

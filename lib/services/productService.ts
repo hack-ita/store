@@ -278,4 +278,73 @@ export const productService = {
     const products = await this.getAllProducts();
     return products.filter(p => p.category === category);
   },
+
+  // Add this to productService object in productService.ts
+  async getProductsByCampaign(campaignId: string): Promise<AppProduct[]> {
+    console.log(`🔍 Fetching products from campaign: ${campaignId}`);
+    
+    if (!hoplixService.isConfigured()) {
+      console.warn('⚠️ Hoplix service not configured');
+      return [];
+    }
+
+    try {
+      const campaign = await hoplixService.getCampaign(campaignId);
+      
+      if (campaign && campaign.products) {
+        console.log(`✅ Found ${campaign.products.length} products in campaign ${campaignId}`);
+        
+        const products: AppProduct[] = campaign.products.map((product: any) => {
+          // Get base CDN image from preview data
+          const baseImage = getBaseImageFromPreview(product.preview);
+          const colors = parseColors(product['product-color'] || '');
+          const sizes = parseSizes(product['product-size'] || '');
+          
+          const allImages = colors.map(color =>
+            buildImageUrl(baseImage, color.imageKey) || baseImage || '/images/hero-1.png'
+          );
+          const mainImage = allImages[0] || baseImage || '/images/hero-1.png';
+          
+          const slug = product['product-name']
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/\s+/g, '-');
+          
+          return {
+            id: product['product-id'],
+            name: product['product-name'],
+            slug: slug,
+            image: mainImage,
+            images: allImages.length > 0 ? allImages : [mainImage],
+            price: parseFloat(product['product-price']),
+            originalPrice: null,
+            category: campaign.name || 'Featured',
+            categorySlug: (campaign.name || 'featured').toLowerCase().replace(/\s+/g, '-'),
+            badge: '🔥 New',
+            badgeColor: 'text-orange-500',
+            description: campaign.description || '',
+            features: [
+              `Product Code: ${product['product-code']}`,
+              `Available Colors: ${product['product-color'] || ''}`,
+              `Available Sizes: ${product['product-size'] || ''}`,
+            ],
+            sizes: sizes,
+            colors: colors,
+            rating: 4.5,
+            reviews: 0,
+            inStock: true,
+            productCode: product['product-code'],
+            baseCost: 0,
+          };
+        });
+        
+        return products;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error(`❌ Error fetching campaign ${campaignId}:`, error);
+      return [];
+    }
+  }
 };
