@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCartStore } from '@/lib/cartStore';
+import { useWishlistStore } from '@/lib/wishlistStore';
 
 interface ProductCardProps {
   product: {
@@ -21,25 +22,28 @@ interface ProductCardProps {
   };
   red?: boolean;
   showWishlist?: boolean;
-  onWishlistToggle?: (productId: string, e: React.MouseEvent) => void;
-  isInWishlist?: boolean;
+  customHeight?: string;
 }
 
 export default function ProductCard({ 
   product, 
   red = false, 
   showWishlist = false,
-  onWishlistToggle,
-  isInWishlist = false
+  customHeight
 }: ProductCardProps) {
   const [imgError, setImgError] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
+  
+  // Wishlist store
+  const wishlistItems = useWishlistStore((state) => state.items);
+  const toggleWishlist = useWishlistStore((state) => state.toggleItem);
+  const isInWishlist = wishlistItems.some(item => item.id === product.id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault(); // Stop link navigation
-    e.stopPropagation(); // Stop event from bubbling up
-    e.nativeEvent.stopImmediatePropagation(); // Extra safety
+    e.preventDefault();
+    e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
     
     setIsAdding(true);
     
@@ -60,9 +64,16 @@ export default function ProductCard({
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (onWishlistToggle) {
-      onWishlistToggle(product.id, e);
-    }
+    
+    toggleWishlist({
+      id: product.id,
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      slug: product.slug,
+      campaignId: product.campaignId,
+    });
   };
 
   return (
@@ -91,8 +102,8 @@ export default function ProductCard({
       )}
       
       <Link href={`/products/${product.slug}`} className="block flex-1">
-        <div className="overflow-hidden rounded-t-md relative">
-          <div className="relative aspect-square w-full bg-gray-100 dark:bg-gray-800">
+        <div className={`overflow-hidden rounded-t-md relative bg-white flex justify-center items-center ${customHeight || ''}`}>
+          <div className="relative w-full aspect-square">
             {!imgError && product.image ? (
               <Image
                 src={product.image}
@@ -116,7 +127,7 @@ export default function ProductCard({
           )}
         </div>
 
-        <div className={`flex flex-col gap-y-3 p-4 rounded-b-md grow ${red ? 'bg-light dark:bg-dark' : ''}`}>
+        <div className={`flex flex-col gap-y-3 p-4 rounded-b-md grow ${red ? '' : 'bg-light dark:bg-accent'}`}>
           <h3 className="min-h-12 text-base font-semibold text-dark dark:text-light line-clamp-2 group-hover:text-primary transition-colors">
             {product.name}
           </h3>
@@ -156,7 +167,6 @@ export default function ProductCard({
             )}
           </div>
 
-          {/* THE FIXED BUTTON - now prevents navigation */}
           <div onClick={(e) => e.stopPropagation()}>
             <button
               onClick={handleAddToCart}

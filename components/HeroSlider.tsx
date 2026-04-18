@@ -49,7 +49,7 @@ export default function HeroSlider() {
   };
 
   return (
-    <section className="relative w-full h-[90vh] overflow-hidden">
+    <section className="relative w-full h-screen overflow-hidden">
       {/* Images Container */}
       <div className="relative w-full h-full">
         {heroImages.map((image, index) => (

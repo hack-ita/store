@@ -107,7 +107,7 @@ export default function CheckoutPage() {
 
   if (cartItems.length === 0 && step === 1) {
     return (
-      <main className="min-h-screen bg-light dark:bg-dark py-20 px-5 mt-32">
+      <main className="min-h-screen bg-light dark:bg-dark py-20 px-5 pt-40 bg-mask">
         <div className="max-w-4xl mx-auto text-center">
           <div className="text-6xl mb-6">🛒</div>
           <h1 className="text-3xl font-bold mb-4 text-dark dark:text-light">
@@ -128,7 +128,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="min-h-screen bg-light dark:bg-dark mt-36 pb-12 px-5">
+    <main className="min-h-screen bg-light dark:bg-dark pt-40 pb-12 px-5 bg-mask">
       <div className="max-w-7xl mx-auto">
         
         <div className="text-center mb-10">
@@ -177,7 +177,7 @@ export default function CheckoutPage() {
                 <div className="space-y-4">
                   {cartItems.map((item) => (
                     <div key={item.id} className="flex gap-4 py-4 border-b border-gray-200 dark:border-gray-700">
-                      <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
+                      <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 shrink-0">
                         <Image
                           src={item.image}
                           alt={item.name}

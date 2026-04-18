@@ -16,7 +16,7 @@ export default function CategoryClient({ initialCampaign, initialProducts, slug 
   const [sortBy, setSortBy] = useState<'price-asc' | 'price-desc' | 'name-asc' | 'name-desc'>('name-asc');
 
   useEffect(() => {
-    console.log(`📦 CategoryClient - ${products?.length || 0} products for campaign:`, campaign?.name);
+    console.log(`📦 CategoryClient - ${products?.length || 0} prodotti per la campagna:`, campaign?.name);
   }, [products, campaign]);
 
   // Safe sort products
@@ -57,7 +57,7 @@ export default function CategoryClient({ initialCampaign, initialProducts, slug 
 
   if (!campaign || !products || products.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-light dark:bg-dark">
+      <div className="min-h-screen flex items-center justify-center bg-light dark:bg-dark pt-40 bg-mask">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4 text-dark dark:text-light">Categoria non trovata</h1>
           <p className="text-dark/70 dark:text-light/70 mb-6">La categoria che stai cercando non esiste o non contiene prodotti.</p>
@@ -68,7 +68,7 @@ export default function CategoryClient({ initialCampaign, initialProducts, slug 
   }
 
   return (
-    <main className="min-h-screen bg-light dark:bg-dark py-12 px-5">
+    <main className="min-h-screen bg-light dark:bg-dark py-12 px-5 pt-40 bg-mask">
       <div className="max-w-7xl mx-auto">
         
         {/* Breadcrumb */}
@@ -109,12 +109,11 @@ export default function CategoryClient({ initialCampaign, initialProducts, slug 
           </div>
         )}
 
-        {/* Products Grid - Using ProductCard with only the props it expects */}
+        {/* Products Grid - Using ProductCard with wishlist support */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
           {sortedProducts.map((product) => {
             const productImage = product?.images?.[0] || product?.image || '/images/hero-1.png';
             
-            // Only pass props that ProductCard expects
             return (
               <ProductCard
                 key={product.id}
@@ -125,13 +124,14 @@ export default function CategoryClient({ initialCampaign, initialProducts, slug 
                   image: productImage,
                   price: product.price,
                   originalPrice: product.originalPrice,
-                  badge: product.badge || (product.originalPrice ? '💸 Sale' : ''),
+                  badge: product.badge || (product.originalPrice ? '💸 In Offerta' : ''),
                   badgeColor: product.badgeColor || (product.originalPrice ? 'text-green-500' : 'text-orange-500'),
                   rating: product.rating || 4.5,
                   reviews: product.reviews || 0,
+                  campaignId: product.campaignId,
                 }}
                 red={false}
-                showWishlist={false}
+                showWishlist={true}
               />
             );
           })}

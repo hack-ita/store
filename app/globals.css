@@ -13,7 +13,7 @@
   --color-primary: #FD0001;
   --color-secondary: #C9A941;
   --color-light: #EDF2F4;
-  --color-dark: #111111;
+  --color-dark: #000;
   --color-accent: #111111;
 
   --breakpoint-max: 118.75rem;
@@ -128,4 +128,49 @@ h1, h2 {
 
 .bounce-in {
   animation: bounceIn 0.5s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+}
+
+/* ===========================
+   BACKGROUND MASKS
+=========================== */
+.bg-mask, .red-mask, .light-mask {
+  background-size: 32px 32px;
+  background-repeat: repeat;
+}
+
+.bg-mask {
+  --dot-color: color-mix(in oklab, var(--color-dark) 30%, transparent);
+  @variant dark {
+  --dot-color: color-mix(in oklab, var(--color-light) 15%, transparent);
+  }
+  background-size: 32px 32px;
+  background-repeat: repeat;
+  background-image:
+    radial-gradient(circle at 8px 8px, var(--dot-color) 0, var(--dot-color) 0.5px, transparent 1px),
+    radial-gradient(circle at 24px 8px, var(--dot-color) 0, var(--dot-color) 0.5px, transparent 1px),
+    radial-gradient(circle at 8px 24px, var(--dot-color) 0, var(--dot-color) 0.5px, transparent 1px),
+    radial-gradient(circle at 24px 24px, var(--dot-color) 0, var(--dot-color) 0.5px, transparent 1px);
+}
+
+.red-mask {
+  --dot-color: color-mix(in oklab, var(--color-dark) 40%, transparent);
+  background-size: 32px 32px;
+  background-repeat: repeat;
+  background-image:
+    radial-gradient(circle at 8px 8px, var(--dot-color) 0, var(--dot-color) 0.5px, transparent 1px),
+    radial-gradient(circle at 24px 8px, var(--dot-color) 0, var(--dot-color) 0.5px, transparent 1px),
+    radial-gradient(circle at 8px 24px, var(--dot-color) 0, var(--dot-color) 0.5px, transparent 1px),
+    radial-gradient(circle at 24px 24px, var(--dot-color) 0, var(--dot-color) 0.5px, transparent 1px);
+}
+
+.light-mask {
+  --dot-color: color-mix(in oklab, var(--color-light) 15%, transparent);
+  @variant dark {
+  --dot-color: color-mix(in oklab, var(--color-dark) 30%, transparent);
+  }
+    background-image:
+    radial-gradient(circle at 8px 8px, var(--dot-color) 0, var(--dot-color) 0.5px, transparent 1px),
+    radial-gradient(circle at 24px 8px, var(--dot-color) 0, var(--dot-color) 0.5px, transparent 1px),
+    radial-gradient(circle at 8px 24px, var(--dot-color) 0, var(--dot-color) 0.5px, transparent 1px),
+    radial-gradient(circle at 24px 24px, var(--dot-color) 0, var(--dot-color) 0.5px, transparent 1px);
 }

@@ -13,7 +13,7 @@ function SuccessContent() {
   // For now, we'll just show success
   
   return (
-    <main className="min-h-screen bg-light dark:bg-dark py-20 px-5 mt-32">
+    <main className="min-h-screen bg-light dark:bg-dark py-20 px-5 mt-32 bg-mask">
       <div className="max-w-4xl mx-auto text-center">
         <div className="text-6xl mb-6">🎉</div>
         <h1 className="text-3xl lg:text-4xl font-bold mb-4 text-dark dark:text-light">
@@ -50,7 +50,7 @@ function SuccessContent() {
 // Loading fallback while suspense is waiting
 function SuccessLoading() {
   return (
-    <main className="min-h-screen bg-light dark:bg-dark py-20 px-5 mt-32">
+    <main className="min-h-screen bg-light dark:bg-dark py-20 px-5 mt-32 bg-mask">
       <div className="max-w-4xl mx-auto text-center">
         <div className="text-6xl mb-6 animate-spin">⏳</div>
         <h1 className="text-3xl font-bold mb-4 text-dark dark:text-light">

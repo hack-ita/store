@@ -134,7 +134,7 @@ function ZoomableImage({ src, alt }: { src: string; alt: string }) {
   return (
     <div
       ref={imageContainerRef}
-      className="relative aspect-square w-full max-w-md mx-auto overflow-hidden rounded-2xl cursor-zoom-in"
+      className="relative aspect-square w-full ma x-w-md mx-auto overflow-hidden rounded-2xl cursor-zoom-in"
       onMouseEnter={() => setIsZoomed(true)}
       onMouseLeave={() => setIsZoomed(false)}
       onMouseMove={handleMouseMove}
@@ -358,7 +358,7 @@ export default function ProductCustomizer() {
 
   if (loading) {
     return (
-      <section className="min-h-screen py-16 px-5 bg-primary dark:bg-primary relative overflow-hidden transition-colors duration-300">
+      <section className="min-h-screen py-16 px-5 bg-primary dark:bg-primary relative overflow-hidden transition-colors duration-300 red-mask">
         <div className="max-w-7xl mx-auto relative z-10 flex items-center justify-center min-h-[60vh]">
           <div className="text-center text-white">
             <div className="inline-block w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
@@ -371,7 +371,7 @@ export default function ProductCustomizer() {
 
   if (error) {
     return (
-      <section className="min-h-screen py-16 px-5 bg-primary dark:bg-primary relative overflow-hidden transition-colors duration-300">
+      <section className="min-h-screen py-16 px-5 bg-primary dark:bg-primary relative overflow-hidden transition-colors duration-300 red-mask">
         <div className="max-w-7xl mx-auto relative z-10 text-center text-white">
           <p className="text-xl mb-4">{error}</p>
           <p className="text-white/80">Verifica che la campagna abbia prodotti configurati correttamente.</p>
@@ -382,7 +382,7 @@ export default function ProductCustomizer() {
 
   if (!selectedProduct || products.length === 0) {
     return (
-      <section className="min-h-screen py-16 px-5 bg-primary dark:bg-primary relative overflow-hidden transition-colors duration-300">
+      <section className="min-h-screen py-16 px-5 bg-primary dark:bg-primary relative overflow-hidden transition-colors duration-300 red-mask">
         <div className="max-w-7xl mx-auto relative z-10 text-center text-white">
           <p>Nessun prodotto disponibile</p>
         </div>
@@ -394,7 +394,7 @@ export default function ProductCustomizer() {
 
   return (
     <>
-      <section className="min-h-screen py-16 px-5 bg-primary dark:bg-primary relative overflow-hidden transition-colors duration-300">
+      <section className="min-h-screen py-16 px-5 bg-primary dark:bg-primary relative overflow-hidden transition-colors duration-300 red-mask">
         <div className="absolute inset-0 opacity-10 dark:opacity-5">
           <div className="absolute top-20 left-10 w-64 h-64 bg-white rounded-full blur-3xl"></div>
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-white rounded-full blur-3xl"></div>

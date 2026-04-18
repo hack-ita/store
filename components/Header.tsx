@@ -4,11 +4,12 @@ import Link from "next/link";
 import Image from "next/image";
 import {useState, useEffect} from "react";
 import { useCartStore } from '@/lib/cartStore';
+import { useWishlistStore } from "@/lib/wishlistStore";
 
 export default function Header() {
     const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-    const [wishlistItems, setWishlistItems] = useState(0);
     const cartItemsCount = useCartStore((state) => state.getTotalItems());
+    const wishlistCount = useWishlistStore((state) => state.getTotalItems());
 
     const applyTheme = (newTheme: 'light' | 'dark') => {
         const html = document.documentElement;
@@ -128,9 +129,9 @@ export default function Header() {
                 />
               </svg>
               
-              {wishlistItems > 0 && (
+              {wishlistCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-primary text-light text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {wishlistItems}
+                  {wishlistCount}
                 </span>
               )}
             </Link>

@@ -164,7 +164,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-light dark:bg-dark">
+      <div className="min-h-screen flex items-center justify-center bg-light dark:bg-dark pt-30 bg-mask">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4 text-dark dark:text-light">Prodotto non trovato</h1>
           <Link href="/" className="text-primary hover:underline">Torna alla home</Link>
@@ -174,7 +174,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   }
 
   return (
-    <main className="min-h-screen bg-light dark:bg-dark mt-20">
+    <main className="min-h-screen bg-light dark:bg-dark pt-30 bg-mask">
       {/* Product Detail Section */}
       <section className="py-12 px-5">
         <div className="max-w-7xl mx-auto">

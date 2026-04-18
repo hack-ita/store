@@ -126,12 +126,10 @@ export default async function CategoryPage({
   console.log(`📦 Built ${enrichedProducts.length} products for category`);
 
   return (
-    <section className='mt-20'>
-      <CategoryClient
-        initialCampaign={campaignDetail}
-        initialProducts={enrichedProducts}
-        slug={slug}
-      />
-    </section>
+    <CategoryClient
+      initialCampaign={campaignDetail}
+      initialProducts={enrichedProducts}
+      slug={slug}
+    />
   );
 }

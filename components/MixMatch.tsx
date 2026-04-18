@@ -400,8 +400,8 @@ export default function MixMatch() {
 
   return (
     <>
-      <section className="py-20 px-5 bg-light dark:bg-dark">
-        <div className="max-w-5xl mx-auto">
+      <section className="py-20 px-5 bg-light dark:bg-dark bg-mask">
+        <div className="max-w-7xl mx-auto">
 
           <div className="text-center mb-10">
             <span className="inline-block text-xs font-medium tracking-widest uppercase text-primary mb-3 px-3 py-1 bg-primary/10 rounded-full">
