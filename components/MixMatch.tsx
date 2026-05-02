@@ -400,21 +400,21 @@ export default function MixMatch() {
 
   return (
     <>
-      <section className="py-20 px-5 bg-light dark:bg-dark bg-mask">
+      <section className="py-20 px-5 bg-dark dark:bg-light light-mask">
         <div className="max-w-7xl mx-auto">
 
           <div className="text-center mb-10">
             <span className="inline-block text-xs font-medium tracking-widest uppercase text-primary mb-3 px-3 py-1 bg-primary/10 rounded-full">
               Mix &amp; Match
             </span>
-            <h2 className="text-3xl lg:text-4xl font-bold text-dark dark:text-light mb-3">Crea il tuo look</h2>
-            <p className="text-dark/60 dark:text-light/60 max-w-md mx-auto">
+            <h2 className="text-3xl lg:text-4xl font-bold text-light dark:text-dark mb-3">Crea il tuo look</h2>
+            <p className="text-light/60 dark:text-dark/60 max-w-md mx-auto">
               Scegli un cappellino, un top e un bottom — ottieni il 10% di sconto sul bundle completo.
             </p>
           </div>
 
           <div className="max-w-xs mx-auto mb-10">
-            <div className="flex justify-between text-xs text-dark/50 dark:text-light/50 mb-2">
+            <div className="flex justify-between text-xs text-light/50 dark:text-dark/50 mb-2">
               <span>{selectedCount} di 3 selezionati</span>
               {allSelected && <span className="text-green-600 dark:text-green-400 font-medium">Bundle sbloccato!</span>}
             </div>
