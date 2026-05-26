@@ -15,7 +15,30 @@ export async function GET() {
     }
 
     const campaigns = await hoplixService.listCampaigns();
-    return NextResponse.json(campaigns, {
+    
+    // Apply enabled/excluded filters from config
+    const filteredCampaigns = campaigns.filter((campaign: any) => {
+      const campaignId = campaign.id_campaign || campaign.campaign_id || campaign.id || campaign.url;
+      if (!campaignId) return false;
+      
+      // If enabledCampaigns is set, only keep campaigns in that list
+      const enabledList = (process.env.HOPLIX_ENABLED_CAMPAIGNS || '').split(',').map(s => s.trim()).filter(Boolean);
+      if (enabledList.length > 0 && !enabledList.includes(campaignId)) {
+        return false;
+      }
+      
+      // Exclude campaigns in the excluded list
+      const excludedList = (process.env.HOPLIX_EXCLUDED_CAMPAIGNS || '').split(',').map(s => s.trim()).filter(Boolean);
+      if (excludedList.includes(campaignId)) {
+        return false;
+      }
+      
+      return true;
+    });
+    
+    console.log(`📋 Campaigns after filter: ${filteredCampaigns.length} (from ${campaigns.length} total)`);
+    
+    return NextResponse.json(filteredCampaigns, {
         headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate' },
     });
   } catch (error) {

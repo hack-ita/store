@@ -27,6 +27,12 @@ interface MasonryGridProps {
   showWishlist?: boolean;
   onWishlistToggle?: (productId: string) => void;
   wishlistItems?: string[];
+  /**
+   * Specific campaign IDs to show in this grid.
+   * When provided, only these campaigns' products will be fetched.
+   * When not provided, uses the global config (enabled/excluded).
+   */
+  campaignIds?: string[];
 }
 
 // Helper functions
@@ -115,7 +121,8 @@ export default function MasonryGrid({
   pageSize = 12,
   showWishlist = false,
   onWishlistToggle,
-  wishlistItems = []
+  wishlistItems = [],
+  campaignIds,
 }: MasonryGridProps) {
   const [products, setProducts] = useState<MasonryProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,70 +130,112 @@ export default function MasonryGrid({
   const [visibleCount, setVisibleCount] = useState(pageSize);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch ALL products from ALL campaigns
+  // Fetch ALL products from ALL campaigns (or specific ones if campaignIds provided)
   useEffect(() => {
     async function fetchAllCampaignProducts() {
       try {
         setLoading(true);
         setError(null);
-        console.log('🔍 MasonryGrid fetching all campaigns...');
         
-        const listRes = await fetch('/api/campaigns/list');
-        if (!listRes.ok) throw new Error('Failed to fetch campaigns list');
-        
-        const campaignsData = await listRes.json();
-        
-        let campaigns: any[] = [];
-        if (Array.isArray(campaignsData)) campaigns = campaignsData;
-        else if (Array.isArray(campaignsData.campaigns)) campaigns = campaignsData.campaigns;
-        else if (Array.isArray(campaignsData.data)) campaigns = campaignsData.data;
-        else if (campaignsData.id_campaign || campaignsData.campaign_id) campaigns = [campaignsData];
-        
-        if (campaigns.length === 0) {
-          setError('Nessuna campagna trovata');
-          setLoading(false);
-          return;
-        }
-        
-        console.log(`📋 Found ${campaigns.length} campaigns`);
-        
-        const results = await Promise.allSettled(
-          campaigns.map(async (campaign: any) => {
-            const campaignId = campaign.id_campaign || campaign.campaign_id || campaign.id || campaign.url;
-            if (!campaignId) return [];
-            
-            try {
-              const res = await fetch(`/api/campaigns/${campaignId}`);
-              if (!res.ok) return [];
-              const data = await res.json();
-              
-              if (data.campaign?.products) {
-                return data.campaign.products.map((p: any) => 
-                  transformProduct(p, campaignId, campaign.name || data.campaign.name)
-                );
+        if (campaignIds && campaignIds.length > 0) {
+          // Fetch from specific campaigns only
+          console.log(`🔍 MasonryGrid fetching specific campaigns:`, campaignIds);
+          
+          const results = await Promise.allSettled(
+            campaignIds.map(async (campaignId) => {
+              try {
+                const res = await fetch(`/api/campaigns/${campaignId}`);
+                if (!res.ok) return [];
+                const data = await res.json();
+                
+                if (data.campaign?.products) {
+                  return data.campaign.products.map((p: any) => 
+                    transformProduct(p, campaignId, data.campaign.name)
+                  );
+                }
+                return [];
+              } catch (err) {
+                console.error(`Failed to fetch campaign ${campaignId}:`, err);
+                return [];
               }
-              return [];
-            } catch (err) {
-              console.error(`Failed to fetch campaign ${campaignId}:`, err);
-              return [];
-            }
-          })
-        );
-        
-        const merged: MasonryProduct[] = results
-          .filter((r): r is PromiseFulfilledResult<MasonryProduct[]> => r.status === 'fulfilled')
-          .flatMap(r => r.value);
-        
-        const seen = new Set<string>();
-        const unique = merged.filter(product => {
-          const key = `${product.campaignId}_${product.productCode}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
-        
-        console.log(`✅ Loaded ${unique.length} unique products`);
-        setProducts(unique);
+            })
+          );
+          
+          const merged: MasonryProduct[] = results
+            .filter((r): r is PromiseFulfilledResult<MasonryProduct[]> => r.status === 'fulfilled')
+            .flatMap(r => r.value);
+          
+          const seen = new Set<string>();
+          const unique = merged.filter(product => {
+            const key = `${product.campaignId}_${product.productCode}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          
+          console.log(`✅ Loaded ${unique.length} unique products from specified campaigns`);
+          setProducts(unique);
+        } else {
+          // Fetch from all campaigns (applying config filters via /list endpoint)
+          console.log('🔍 MasonryGrid fetching all campaigns...');
+          
+          const listRes = await fetch('/api/campaigns/list');
+          if (!listRes.ok) throw new Error('Failed to fetch campaigns list');
+          
+          const campaignsData = await listRes.json();
+          
+          let campaigns: any[] = [];
+          if (Array.isArray(campaignsData)) campaigns = campaignsData;
+          else if (Array.isArray(campaignsData.campaigns)) campaigns = campaignsData.campaigns;
+          else if (Array.isArray(campaignsData.data)) campaigns = campaignsData.data;
+          else if (campaignsData.id_campaign || campaignsData.campaign_id) campaigns = [campaignsData];
+          
+          if (campaigns.length === 0) {
+            setError('Nessuna campagna trovata');
+            setLoading(false);
+            return;
+          }
+          
+          console.log(`📋 Found ${campaigns.length} campaigns`);
+          
+          const results = await Promise.allSettled(
+            campaigns.map(async (campaign: any) => {
+              const campaignId = campaign.id_campaign || campaign.campaign_id || campaign.id || campaign.url;
+              if (!campaignId) return [];
+              
+              try {
+                const res = await fetch(`/api/campaigns/${campaignId}`);
+                if (!res.ok) return [];
+                const data = await res.json();
+                
+                if (data.campaign?.products) {
+                  return data.campaign.products.map((p: any) => 
+                    transformProduct(p, campaignId, campaign.name || data.campaign.name)
+                  );
+                }
+                return [];
+              } catch (err) {
+                console.error(`Failed to fetch campaign ${campaignId}:`, err);
+                return [];
+              }
+            })
+          );
+          
+          const merged: MasonryProduct[] = results
+            .filter((r): r is PromiseFulfilledResult<MasonryProduct[]> => r.status === 'fulfilled')
+            .flatMap(r => r.value);
+          
+          const seen = new Set<string>();
+          const unique = merged.filter(product => {
+            const key = `${product.campaignId}_${product.productCode}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+          
+          console.log(`✅ Loaded ${unique.length} unique products`);
+          setProducts(unique);
+        }
       } catch (err) {
         console.error('Error fetching products:', err);
         setError('Errore nel caricamento dei prodotti');
@@ -196,7 +245,7 @@ export default function MasonryGrid({
     }
     
     fetchAllCampaignProducts();
-  }, []);
+  }, [campaignIds]);
 
   const handleWishlistToggle = (productId: string, e: React.MouseEvent) => {
     e.preventDefault();

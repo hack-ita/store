@@ -208,7 +208,7 @@ export default function ProductCustomizer() {
         setLoading(true);
         setError(null);
         
-        const campaignId = '00560566';
+        const campaignId = ["00576556", "00576559", "00576585", "00576589", "00576590", "00576591", "00576593", "00576595", "00576597", "00576601", "00576606"];
         
         console.log(`🔍 Customizer fetching campaign: ${campaignId}`);
         const response = await fetch(`/api/campaigns/${campaignId}`);

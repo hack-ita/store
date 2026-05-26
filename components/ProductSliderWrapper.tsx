@@ -22,6 +22,7 @@ interface ProductSliderWrapperProps {
   red?: boolean;
   showWishlist?: boolean;
   wishlistItems?: string[];
+  campaignIds?: string[];
 }
 
 export default async function ProductSliderWrapper({ 
@@ -30,13 +31,23 @@ export default async function ProductSliderWrapper({
   subtitle = "Scopri i nostri prodotti tecnologici",
   red = false,
   showWishlist = false,
-  wishlistItems = []
+  wishlistItems = [],
+  campaignIds,
 }: ProductSliderWrapperProps) {
   
   console.log('🔍 Wrapper - category prop:', category);
-  console.log('🔍 Wrapper - useRealApi:', config.useRealApi);
+  console.log('🔍 Wrapper - campaignIds prop:', campaignIds);
   
-  const allProducts = await productService.getAllProducts();
+  let allProducts;
+  
+  if (campaignIds && campaignIds.length > 0) {
+    // Fetch from specific campaigns
+    console.log(`🌐 Fetching products from ${campaignIds.length} specific campaigns`);
+    allProducts = await productService.getProductsByCampaigns(campaignIds);
+  } else {
+    // Fall back to default (all active campaigns)
+    allProducts = await productService.getAllProducts();
+  }
   
   console.log(`📦 Wrapper - Total products fetched: ${allProducts.length}`);
   

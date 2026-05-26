@@ -101,7 +101,6 @@ export default async function CategoryPage({
         images: images,
         category: campaignDetail.name,
         categorySlug: slug,
-        badge: '🔥 New',
         badgeColor: 'text-orange-500',
         description: campaignDetail.description || '',
         features: [
