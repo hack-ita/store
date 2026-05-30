@@ -12,7 +12,7 @@ export async function GET() {
   // Initialize service
   hoplixService.initialize(apiKey, apiSecret);
   
-  // Your campaign ID from the dashboard
+  // Your campaign ID from the dashboard (NOTE: 00542388 and 00560566 are now site-wide excluded)
   const campaignId = '00542388'; // Your Product ID
   const campaignUrl = 'hackita---test-60189';
   

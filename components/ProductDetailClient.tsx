@@ -4,7 +4,8 @@ import { useState, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import DOMPurify from 'dompurify';
-import { useCartStore } from '@/lib/cartStore'; // Add this import
+import { useCartStore } from '@/lib/cartStore';
+import RatingDisplay from './RatingDisplay';
 
 interface ProductDetailClientProps {
   initialProduct: {
@@ -18,7 +19,7 @@ interface ProductDetailClientProps {
     image: string;
     images: string[];
     sizes: string[];
-    colors: Array<{ name: string; code: string; colorClass: string; imageKey: string }>;
+    colors: Array<{ name: string; code: string; imageKey: string }>;
     category: string;
     categorySlug: string;
     badge?: string;
@@ -27,6 +28,7 @@ interface ProductDetailClientProps {
     reviews: number;
     inStock: boolean;
     productCode: string;
+    campaignId?: string;
   };
 }
 
@@ -126,11 +128,13 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   // Get addItem function from cart store
   const addItem = useCartStore((state) => state.addItem);
 
-  // Sanitize and render HTML description
+  // Sanitize and render HTML description — DOMPurify is browser-only so guard SSR
   const renderDescription = () => {
     if (!product?.description) return null;
-    const sanitizedHtml = DOMPurify.sanitize(product.description);
-    return <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} className="prose prose-sm dark:prose-invert max-w-none" />;
+    const html = typeof window !== 'undefined'
+      ? DOMPurify.sanitize(product.description)
+      : product.description;
+    return <div dangerouslySetInnerHTML={{ __html: html }} className="prose prose-sm dark:prose-invert max-w-none" />;
   };
 
   const handleAddToCart = () => {
@@ -150,6 +154,9 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
       image: product.images[0] || product.image,
       quantity: quantity,
       slug: product.slug,
+      campaignId: product.campaignId,
+      size: selectedSize,
+      color: selectedColor?.name,
     });
     
     // Show success message
@@ -228,16 +235,7 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                 <h1 className="text-3xl lg:text-4xl font-bold text-dark dark:text-light mb-2">
                   {capitalizeWords(product.name)}
                 </h1>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <svg key={i} className={`w-5 h-5 ${i < Math.floor(product.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300 dark:text-gray-600'}`} fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <span className="text-dark/60 dark:text-light/60">({product.reviews} recensioni)</span>
-                </div>
+                <RatingDisplay productId={product.id} size="md" showCount={true} interactive />
               </div>
 
               {/* Price */}
@@ -281,8 +279,9 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                       <button 
                         key={color.name} 
                         onClick={() => setSelectedColor(color)} 
-                        className={`w-10 h-10 rounded-full transition-all ${selectedColor?.name === color.name ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-dark scale-110' : 'hover:scale-105'} ${color.colorClass}`} 
-                        title={color.name} 
+                        className={`w-10 h-10 rounded-full border border-dark/20 dark:border-light/20 transition-all ${selectedColor?.name === color.name ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-dark scale-110' : 'hover:scale-105'}`}
+                        style={{ backgroundColor: color.code }}
+                        title={color.name}
                       />
                     ))}
                   </div>

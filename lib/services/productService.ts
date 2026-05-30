@@ -1,5 +1,6 @@
 import { config, getActiveCampaignIds } from '@/lib/config';
 import { hoplixService, HoplixProduct } from './hoplixService';
+import { parseColors, type ColorInfo } from '@/lib/colorUtils';
 
 export interface AppProduct {
   id: string;
@@ -16,7 +17,7 @@ export interface AppProduct {
   description: string;
   features: string[];
   sizes: string[];
-  colors: Array<{ name: string; code: string; colorClass: string; imageKey: string }>;
+  colors: ColorInfo[];
   rating: number;
   reviews: number;
   inStock: boolean;
@@ -39,22 +40,6 @@ function getBaseImageFromPreview(preview: Array<Record<string, string>> | undefi
   return anyFrontKey ? preview[0][anyFrontKey] : '';
 }
 
-// Helper to parse colors from API response
-function parseColors(colorString: string): Array<{ name: string; code: string; colorClass: string; imageKey: string }> {
-  if (!colorString) return [];
-
-  const colorNames = colorString.split(',');
-  return colorNames.slice(0, 6).map(name => {
-    const trimmed = name.trim().toLowerCase();
-    return {
-      name: trimmed.charAt(0).toUpperCase() + trimmed.slice(1),
-      code: getColorCode(trimmed),
-      colorClass: `bg-${trimmed}`,
-      imageKey: trimmed,
-    };
-  });
-}
-
 // Helper to parse sizes from API response
 function parseSizes(sizeString: string): string[] {
   if (!sizeString) return [];
@@ -73,31 +58,6 @@ function parseSizes(sizeString: string): string[] {
   return sizes;
 }
 
-function getColorCode(colorName: string): string {
-  const colorMap: Record<string, string> = {
-    white: '#FFFFFF',
-    black: '#000000',
-    red: '#FF0000',
-    navy: '#000080',
-    darkgrey: '#555555',
-    heathergrey: '#888888',
-    lightblue: '#ADD8E6',
-    kellygreen: '#4CBB17',
-    yellow: '#FFFF00',
-    orange: '#FFA500',
-    bordeaux: '#800000',
-    fuchsia: '#FF00FF',
-    pink: '#FFC0CB',
-    purple: '#800080',
-    graymarble: '#AAAAAA',
-    neonorange: '#FF6600',
-    deepberry: '#8B0000',
-    kiwi: '#86B404',
-    bottlegreen: '#006400',
-    blueroyal: '#4169E1',
-  };
-  return colorMap[colorName] || '#CCCCCC';
-}
 
 function transformToAppProduct(hoplixProduct: HoplixProduct): AppProduct {
   const slug = hoplixProduct['product-code'].toLowerCase().replace(/_/g, '-');
@@ -234,10 +194,36 @@ export const productService = {
     }
 
     try {
-      const activeIds = getActiveCampaignIds();
+      let activeIds = getActiveCampaignIds();
       
+      // If no active campaigns from config, fall back to listing ALL campaigns
+      // from the Hoplix API and filtering out the excluded ones
       if (activeIds.length === 0) {
-        console.warn('⚠️ No active campaigns configured');
+        console.log('🌐 No active campaigns in config, listing all campaigns...');
+        const allCampaigns = await hoplixService.listCampaigns();
+        
+        // Hoplix returns status in Italian: "attiva" = active, "eliminata" = deleted
+        const validCampaigns = allCampaigns.filter((c: any) => {
+          const status = (c.status || '').toLowerCase().trim();
+          if (status !== 'attiva') {
+            console.log(`⏭️ Skipping campaign "${c.name}" (${c.id_campaign}) - status: "${c.status}"`);
+            return false;
+          }
+          return true;
+        });
+        
+        activeIds = validCampaigns
+          .map((c: any) => c.id_campaign || c.campaign_id || c.id || c.url)
+          .filter(Boolean);
+        
+        // Apply excluded filter
+        activeIds = activeIds.filter((id: string) => !config.excludedCampaigns.includes(id));
+        
+        console.log(`📋 Found ${activeIds.length} in-progress campaigns after exclusion filter`);
+      }
+
+      if (activeIds.length === 0) {
+        console.warn('⚠️ No active campaigns found');
         return [];
       }
 

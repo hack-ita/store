@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useCartStore } from '@/lib/cartStore';
+import { parseColors, type ColorInfo } from '@/lib/colorUtils';
 
 interface MixMatchProduct {
   id: string;
@@ -11,7 +12,7 @@ interface MixMatchProduct {
   price: number;
   image: string;
   baseImage: string;
-  colors: Array<{ name: string; code: string; colorClass: string; imageKey: string }>;
+  colors: ColorInfo[];
   sizes: string[];
   productCode: string;
   campaignId?: string;
@@ -22,7 +23,7 @@ interface SlotConfig {
   label: string;
   subLabel: string;
   emoji: string;
-  campaignId: string;
+  campaignIds: string[];
   iconBg: string;
 }
 
@@ -39,7 +40,7 @@ const SLOTS: SlotConfig[] = [
     label: 'Cappellini',
     subLabel: 'Scegli il tuo copricapo',
     emoji: '🧢',
-    campaignId: process.env.NEXT_PUBLIC_HOPLIX_CAMPAIGN_CAPS || '00560566',
+    campaignIds: ["00576615"],
     iconBg: 'bg-purple-50 dark:bg-purple-900/20',
   },
   {
@@ -47,7 +48,7 @@ const SLOTS: SlotConfig[] = [
     label: 'Top & Magliette',
     subLabel: 'Scegli la parte superiore',
     emoji: '👕',
-    campaignId: process.env.NEXT_PUBLIC_HOPLIX_CAMPAIGN_TOPS || '00560566',
+    campaignIds: ["00576556", "00576559", "00576585"],
     iconBg: 'bg-teal-50 dark:bg-teal-900/20',
   },
   {
@@ -55,7 +56,7 @@ const SLOTS: SlotConfig[] = [
     label: 'Bottom & Pantaloni',
     subLabel: 'Scegli la parte inferiore',
     emoji: '👖',
-    campaignId: process.env.NEXT_PUBLIC_HOPLIX_CAMPAIGN_BOTTOMS || '00560566',
+    campaignIds: ["00576610"],
     iconBg: 'bg-orange-50 dark:bg-orange-900/20',
   },
 ];
@@ -209,60 +210,82 @@ export default function MixMatch() {
   useEffect(() => {
     SLOTS.forEach(async (slot) => {
       try {
-        const res = await fetch(`/api/campaigns/${slot.campaignId}`);
-        if (!res.ok) throw new Error('Failed to fetch');
-        const data = await res.json();
+        // Fetch from multiple campaigns and merge
+        const results = await Promise.allSettled(
+          slot.campaignIds.map(async (campaignId) => {
+            const res = await fetch(`/api/campaigns/${campaignId}`);
+            if (!res.ok) throw new Error(`Failed to fetch campaign ${campaignId}`);
+            const data = await res.json();
+            // Tag each product with its source campaign so we don't merge IDs
+            return (data.campaign?.products || []).map((p: any) => ({ ...p, _campaignId: campaignId }));
+          })
+        );
 
-        if (data.campaign?.products) {
-          const transformed: MixMatchProduct[] = data.campaign.products.map((p: any) => {
-            const baseImage = getBaseImageFromPreview(p.preview);
-            const firstColor = p['product-color']?.split(',')[0]?.trim().toLowerCase() || 'black';
-            const mainImage = buildImageUrl(baseImage, firstColor) || baseImage || FALLBACK_IMAGE;
+        const allProducts: any[] = results
+          .filter((r): r is PromiseFulfilledResult<any[]> => r.status === 'fulfilled')
+          .flatMap(r => r.value);
 
-            const colors = (p['product-color'] || '').split(',')
-              .map((c: string) => c.trim().toLowerCase()).filter(Boolean)
-              .map((c: string) => ({ name: c.charAt(0).toUpperCase() + c.slice(1), code: c, colorClass: `bg-${c}`, imageKey: c }));
+        if (allProducts.length === 0) {
+          console.warn(`No products found for ${slot.type} slots`);
+          return;
+        }
 
-            const sizes = (p['product-size'] || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+        const transformed: MixMatchProduct[] = allProducts.map((p: any) => {
+          const baseImage = getBaseImageFromPreview(p.preview);
+          const firstColor = p['product-color']?.split(',')[0]?.trim().toLowerCase() || 'black';
+          const mainImage = buildImageUrl(baseImage, firstColor) || baseImage || FALLBACK_IMAGE;
 
-            if (colors.length === 0) colors.push({ name: 'Black', code: 'black', colorClass: 'bg-black', imageKey: 'black' });
-            if (sizes.length === 0) sizes.push('M');
+          const colors = parseColors(p['product-color'] || '');
 
-            return {
-              id: p['product-id'],
-              name: p['product-name'],
-              slug: p['product-name'].toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-'),
-              price: parseFloat(p['product-price']),
-              image: mainImage,
-              baseImage,
-              colors,
-              sizes,
-              productCode: p['product-code'],
-              campaignId: slot.campaignId,
-            };
-          });
+          const sizes = (p['product-size'] || '').split(',').map((s: string) => s.trim()).filter(Boolean);
 
-          setProducts(prev => ({ ...prev, [slot.type]: transformed }));
+          if (colors.length === 0) colors.push({ name: 'Black', code: '#000000', imageKey: 'black' });
+          if (sizes.length === 0) sizes.push('M');
+
+          return {
+            id: p['product-id'],
+            name: p['product-name'],
+            slug: p['product-name'].toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-'),
+            price: parseFloat(p['product-price']),
+            image: mainImage,
+            baseImage,
+            colors,
+            sizes,
+            productCode: p['product-code'],
+            campaignId: p._campaignId || slot.campaignIds[0],
+          };
+        });
+
+        // Deduplicate by product ID
+        const seen = new Set<string>();
+        const unique = transformed.filter(p => {
+          if (seen.has(p.id)) return false;
+          seen.add(p.id);
+          return true;
+        });
+
+        console.log(`📦 MixMatch - ${slot.type}: ${unique.length} unique products from ${slot.campaignIds.length} campaigns`);
+
+        setProducts(prev => ({ ...prev, [slot.type]: unique }));
+        
+        // AUTO-SELECT first product with its first color and size
+        if (unique.length > 0 && !selections[slot.type]) {
+          const firstProduct = unique[0];
+          const firstColor = firstProduct.colors[0];
+          const firstSize = firstProduct.sizes[0];
+          const displayImage = firstColor 
+            ? buildImageUrl(firstProduct.baseImage, firstColor.imageKey) || firstProduct.baseImage || FALLBACK_IMAGE
+            : firstProduct.image;
           
-          // AUTO-SELECT first product with its first color and size
-          if (transformed.length > 0 && !selections[slot.type]) {
-            const firstProduct = transformed[0];
-            const firstColor = firstProduct.colors[0];
-            const firstSize = firstProduct.sizes[0];
-            const displayImage = firstColor 
-              ? buildImageUrl(firstProduct.baseImage, firstColor.imageKey) || firstProduct.baseImage || FALLBACK_IMAGE
-              : firstProduct.image;
-            
-            setSelections(prev => ({
-              ...prev,
-              [slot.type]: {
-                product: firstProduct,
-                color: firstColor,
-                size: firstSize,
-                displayImage,
-              }
-            }));
-          }
+          setSelections(prev => ({
+            ...prev,
+            [slot.type]: {
+              product: firstProduct,
+              color: firstColor,
+              size: firstSize,
+              displayImage,
+            }
+          }));
         }
       } catch (err) {
         console.error(`Failed to load ${slot.type} products:`, err);
@@ -296,20 +319,24 @@ export default function MixMatch() {
   function handleAddBundle() {
     if (!allSelected) return;
     setIsAdding(true);
+    const discountLabel = `MixMatch Bundle -${BUNDLE_DISCOUNT * 100}%`;
     (['cap', 'top', 'bottom'] as const).forEach(type => {
       const s = selections[type];
       if (!s) return;
+      const discountedPrice = Math.round(s.product.price * (1 - BUNDLE_DISCOUNT) * 100) / 100;
       addItem({
         id: `${s.product.id}_${s.color.imageKey}_${s.size}_mixmatch`,
         productId: s.product.id,
         name: `${s.product.name} — ${s.color.name} / ${s.size}`,
-        price: s.product.price,
+        price: discountedPrice,
         image: s.displayImage,
         quantity: 1,
         slug: s.product.slug,
         campaignId: s.product.campaignId,
         size: s.size,
         color: s.color.name,
+        discountNote: discountLabel,
+        originalPrice: s.product.price,
       });
     });
     setTimeout(() => setIsAdding(false), 1500);

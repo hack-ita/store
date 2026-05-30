@@ -10,8 +10,10 @@ export interface CartItem {
   quantity: number;
   slug?: string;
   campaignId?: string;
-  size?: string;      // Add size field
-  color?: string;     // Add color field
+  size?: string;
+  color?: string;
+  discountNote?: string;  // e.g. "MixMatch Bundle -10%"
+  originalPrice?: number; // pre-discount price per unit
 }
 
 interface CartStore {

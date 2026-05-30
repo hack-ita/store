@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { hoplixService } from '@/lib/services/hoplixService';
+import { parseColors } from '@/lib/colorUtils';
 import CategoryClient from '@/components/CategoryClient';
 
 // Initialize Hoplix service
@@ -108,12 +109,7 @@ export default async function CategoryPage({
           `Available Sizes: ${p['product-size'] || ''}`,
         ],
         sizes: p['product-size']?.split(',').map((s: string) => s.trim()) || [],
-        colors: colorList.map((color: string) => ({
-          name: color.charAt(0).toUpperCase() + color.slice(1),
-          code: color,
-          colorClass: `bg-${color}`,
-          imageKey: color,
-        })),
+        colors: parseColors(p['product-color'] || ''),
         rating: 4.5,
         reviews: 0,
         inStock: true,

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useCartStore } from '@/lib/cartStore'; // Add this import
+import { parseColors, getColorHex, type ColorInfo } from '@/lib/colorUtils';
 
 // Types for API data
 interface HoplixProduct {
@@ -23,15 +24,12 @@ interface ProductType {
   images: Record<string, string>;
   availableColors: ColorType[];
   availableSizes: string[];
-  slug?: string; // Add slug for product links
+  slug?: string;
+  campaignId?: string;
 }
 
-interface ColorType {
-  name: string;
-  code: string;
-  colorClass: string;
-  imageKey: string;
-}
+// ColorInfo imported from @/lib/colorUtils
+type ColorType = ColorInfo;
 
 type ModalType = 'product' | 'size' | 'color' | 'size-chart' | null;
 
@@ -59,6 +57,9 @@ const sizeChartData = {
   },
 };
 
+// All campaign IDs for the product customizer
+const CAMPAIGN_IDS = ["00576556", "00576559", "00576585", "00576589", "00576590"];
+
 // Helper to get the base preview image URL
 function getBasePreviewImage(product: HoplixProduct): string {
   if (product.preview && product.preview[0]) {
@@ -76,18 +77,7 @@ function buildImageUrl(baseUrl: string, colorCode: string): string {
   return baseUrl.replace(/\/([^/]+)(\/\d+\/)$/, `/${colorCode}$2`);
 }
 
-// Helper to parse colors from API response
-function parseColors(colorString: string): ColorType[] {
-  if (!colorString) return [];
-
-  const colorNames = colorString.split(',');
-  return colorNames.map(name => ({
-    name: name.trim().charAt(0).toUpperCase() + name.trim().slice(1),
-    code: name.trim().toLowerCase(),
-    colorClass: `bg-${name.trim().toLowerCase()}`,
-    imageKey: name.trim().toLowerCase(),
-  }));
-}
+// Color parsing functions imported from @/lib/colorUtils
 
 // Helper to parse sizes from API response
 function parseSizes(sizeString: string): string[] {
@@ -113,6 +103,40 @@ function generateSlug(name: string): string {
   return name.toLowerCase()
     .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, '-');
+}
+
+// Helper to transform a Hoplix product into our ProductType
+function transformProduct(product: HoplixProduct, campaignId?: string): ProductType | null {
+  const availableColors = parseColors(product['product-color']);
+  const availableSizes = parseSizes(product['product-size']);
+  const slug = generateSlug(product['product-name']);
+
+  const baseImage = getBasePreviewImage(product);
+  const images: Record<string, string> = {};
+
+  availableColors.forEach((color) => {
+    const colorUrl = buildImageUrl(baseImage, color.imageKey);
+    images[color.imageKey] = colorUrl || baseImage || '/images/hero-1.png';
+  });
+
+  if (availableColors.length === 0 && baseImage) {
+    images['default'] = baseImage;
+  }
+
+  if (Object.keys(images).length === 0) {
+    images['default'] = '/images/hero-1.png';
+  }
+
+  return {
+    id: product['product-id'],
+    name: product['product-name'],
+    price: parseFloat(product['product-price']),
+    images,
+    availableColors,
+    availableSizes,
+    slug,
+    campaignId,
+  };
 }
 
 // Zoom on Hover Component
@@ -201,87 +225,76 @@ export default function ProductCustomizer() {
     return matchedKey ? sizeChartData[matchedKey as keyof typeof sizeChartData] : sizeChartData.default;
   };
 
-  // Fetch campaign data from API
+  // Fetch campaign data from API - fetch all campaigns and merge
   useEffect(() => {
-    async function fetchCampaign() {
+    async function fetchAllCampaigns() {
       try {
         setLoading(true);
         setError(null);
         
-        const campaignId = ["00576556", "00576559", "00576585", "00576589", "00576590", "00576591", "00576593", "00576595", "00576597", "00576601", "00576606"];
+        console.log(`🔍 Customizer fetching ${CAMPAIGN_IDS.length} campaigns...`);
         
-        console.log(`🔍 Customizer fetching campaign: ${campaignId}`);
-        const response = await fetch(`/api/campaigns/${campaignId}`);
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('📦 Full campaign data received:', data);
-
-        if (data.campaign && data.campaign.products && data.campaign.products.length > 0) {
-          const campaignProducts: HoplixProduct[] = data.campaign.products;
-          console.log(`📦 Found ${campaignProducts.length} products`);
-
-          const transformedProducts: ProductType[] = campaignProducts.map((product: HoplixProduct) => {
-            const availableColors = parseColors(product['product-color']);
-            const availableSizes = parseSizes(product['product-size']);
-            const slug = generateSlug(product['product-name']);
-
-            const baseImage = getBasePreviewImage(product);
-            const images: Record<string, string> = {};
+        const results = await Promise.allSettled(
+          CAMPAIGN_IDS.map(async (campaignId) => {
+            const response = await fetch(`/api/campaigns/${campaignId}`);
+            if (!response.ok) {
+              console.warn(`Failed to fetch campaign ${campaignId}: ${response.status}`);
+              return [];
+            }
+            const data = await response.json();
             
-            availableColors.forEach((color) => {
-              const colorUrl = buildImageUrl(baseImage, color.imageKey);
-              images[color.imageKey] = colorUrl || baseImage || '/images/hero-1.png';
-            });
-
-            if (availableColors.length === 0 && baseImage) {
-              images['default'] = baseImage;
+            if (data.campaign && data.campaign.products && data.campaign.products.length > 0) {
+              console.log(`📦 Campaign ${campaignId}: ${data.campaign.products.length} products`);
+              return data.campaign.products.map((p: HoplixProduct) => transformProduct(p, campaignId));
             }
+            return [];
+          })
+        );
+        
+        // Merge all products and deduplicate by product ID
+        const allProducts: ProductType[] = results
+          .filter((r): r is PromiseFulfilledResult<(ProductType | null)[]> => r.status === 'fulfilled')
+          .flatMap(r => r.value)
+          .filter((p): p is ProductType => p !== null);
+        
+        const seen = new Set<string>();
+        const uniqueProducts = allProducts.filter(product => {
+          if (seen.has(product.id)) return false;
+          seen.add(product.id);
+          return true;
+        });
+        
+        console.log(`📦 Customizer - Total unique products: ${uniqueProducts.length}`);
+        
+        if (uniqueProducts.length > 0) {
+          setProducts(uniqueProducts);
 
-            return {
-              id: product['product-id'],
-              name: product['product-name'],
-              price: parseFloat(product['product-price']),
-              images,
-              availableColors,
-              availableSizes,
-              slug,
-            };
-          });
+          const firstProduct = uniqueProducts[0];
+          setSelectedProduct(firstProduct);
 
-          setProducts(transformedProducts);
+          if (firstProduct.availableSizes.length > 0) {
+            const defaultSize = firstProduct.availableSizes.includes('M')
+              ? 'M'
+              : firstProduct.availableSizes[0];
+            setSelectedSize(defaultSize);
+          }
 
-          if (transformedProducts.length > 0) {
-            const firstProduct = transformedProducts[0];
-            setSelectedProduct(firstProduct);
-
-            if (firstProduct.availableSizes.length > 0) {
-              const defaultSize = firstProduct.availableSizes.includes('M')
-                ? 'M'
-                : firstProduct.availableSizes[0];
-              setSelectedSize(defaultSize);
-            }
-
-            if (firstProduct.availableColors.length > 0) {
-              setSelectedColor(firstProduct.availableColors[0]);
-            }
+          if (firstProduct.availableColors.length > 0) {
+            setSelectedColor(firstProduct.availableColors[0]);
           }
         } else {
-          console.warn('No products found in campaign');
-          setError('Nessun prodotto disponibile in questa campagna');
+          console.warn('No products found in any campaign');
+          setError('Nessun prodotto disponibile');
         }
       } catch (error) {
-        console.error('Error fetching campaign for customizer:', error);
+        console.error('Error fetching campaigns for customizer:', error);
         setError('Errore nel caricamento dei prodotti');
       } finally {
         setLoading(false);
       }
     }
 
-    fetchCampaign();
+    fetchAllCampaigns();
   }, []);
 
   const handleProductChange = (product: ProductType) => {
@@ -342,6 +355,7 @@ export default function ProductCustomizer() {
       image: productImage || '/images/hero-1.png',
       quantity: quantity,
       slug: selectedProduct.slug,
+      campaignId: selectedProduct.campaignId,
       size: selectedSize,
       color: selectedColor?.name,
     });
@@ -496,7 +510,10 @@ export default function ProductCustomizer() {
                           <div className="flex items-center gap-2">
                             {selectedColor && (
                               <>
-                                <div className={`w-5 h-5 rounded-full ${selectedColor.colorClass} ring-1 ring-gray-300 dark:ring-gray-600`} />
+                                <div
+                                  className="w-5 h-5 rounded-full ring-1 ring-gray-300 dark:ring-gray-600"
+                                  style={{ backgroundColor: selectedColor.code }}
+                                />
                                 <span className="text-lg font-semibold text-gray-800 dark:text-white">
                                   {selectedColor.name}
                                 </span>
@@ -709,7 +726,10 @@ export default function ProductCustomizer() {
                         : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
                   >
-                    <div className={`w-full h-12 rounded-lg mb-2 ${color.colorClass} ring-1 ring-inset ring-gray-300 dark:ring-gray-600 shadow-sm`} />
+                    <div
+                      className="w-full h-12 rounded-lg mb-2 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 shadow-sm"
+                      style={{ backgroundColor: color.code }}
+                    />
                     <span className="text-sm text-gray-700 dark:text-gray-300">
                       {color.name}
                     </span>

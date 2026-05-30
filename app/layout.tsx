@@ -3,6 +3,15 @@ import { Oswald, Ubuntu } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import NavigationProgress from "@/components/NavigationProgress";
+
+if (process.env.NODE_ENV === 'production') {
+  const noop = () => {};
+  console.log = noop;
+  console.warn = noop;
+  console.info = noop;
+  console.debug = noop;
+}
 
 const oswald = Oswald({
   subsets: ['latin'],
@@ -27,9 +36,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const isProd = process.env.NODE_ENV === 'production';
+
   return (
     <html lang="en" className={`${oswald.variable} ${ubuntu.variable}`}>
+      <head>
+        {isProd && (
+          <script dangerouslySetInnerHTML={{
+            __html: `(function(){var n=function(){};['log','warn','info','debug','group','groupEnd','groupCollapsed','time','timeEnd','timeLog','table','count','countReset','dir','dirxml','assert'].forEach(function(m){console[m]=n;});})();`
+          }} />
+        )}
+      </head>
       <body className="antialiased bg-light text-dark dark:bg-dark dark:text-light flex flex-col">
+        <NavigationProgress />
         <Header />
         <main>
           {children}

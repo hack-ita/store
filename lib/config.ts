@@ -1,4 +1,8 @@
 // lib/config.ts
+// Campaign IDs that are always excluded from the store site-wide.
+// These campaigns and their products will never appear anywhere on the site.
+const ALWAYS_EXCLUDED_CAMPAIGNS = ['00560566', '00542388'];
+
 export const config = {
   // Always use real API - removed the condition
   useRealApi: true,
@@ -16,9 +20,14 @@ export const config = {
   /**
    * Comma-separated list of campaign IDs to exclude from the store.
    * Exclusion is applied AFTER enabledCampaigns filtering.
+   * 
+   * Campaigns "00560566" and "00542388" are ALWAYS excluded site-wide.
    * Example: HOPLIX_EXCLUDED_CAMPAIGNS="00560569,00560570"
    */
-  excludedCampaigns: (process.env.HOPLIX_EXCLUDED_CAMPAIGNS || '').split(',').map(s => s.trim()).filter(Boolean),
+  excludedCampaigns: [
+    ...ALWAYS_EXCLUDED_CAMPAIGNS,
+    ...(process.env.HOPLIX_EXCLUDED_CAMPAIGNS || '').split(',').map(s => s.trim()).filter(Boolean),
+  ],
 };
 
 /**
@@ -31,8 +40,8 @@ export function getActiveCampaignIds(): string[] {
   if (config.enabledCampaigns.length > 0) {
     return config.enabledCampaigns.filter(id => !config.excludedCampaigns.includes(id));
   }
-  // When no explicit enabled list, return the default single campaign
-  return [config.hoplixCampaignId];
+  // When no explicit enabled list, return the default single campaign (if not excluded)
+  return [config.hoplixCampaignId].filter(id => !config.excludedCampaigns.includes(id));
 }
 
 /**

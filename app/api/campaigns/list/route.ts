@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { hoplixService } from '@/lib/services/hoplixService';
+import { config, filterCampaignIds } from '@/lib/config';
 
 const apiKey = process.env.HOPLIX_API_KEY;
 const apiSecret = process.env.HOPLIX_API_SECRET;
@@ -16,20 +17,25 @@ export async function GET() {
 
     const campaigns = await hoplixService.listCampaigns();
     
-    // Apply enabled/excluded filters from config
+    // Use the centralized config filtering (which includes always-excluded campaigns 00560566 and 00542388)
     const filteredCampaigns = campaigns.filter((campaign: any) => {
       const campaignId = campaign.id_campaign || campaign.campaign_id || campaign.id || campaign.url;
       if (!campaignId) return false;
       
-      // If enabledCampaigns is set, only keep campaigns in that list
-      const enabledList = (process.env.HOPLIX_ENABLED_CAMPAIGNS || '').split(',').map(s => s.trim()).filter(Boolean);
-      if (enabledList.length > 0 && !enabledList.includes(campaignId)) {
+      // Hoplix returns status in Italian: "attiva" = active, "eliminata" = deleted
+      const status = (campaign.status || '').toLowerCase().trim();
+      if (status !== 'attiva') {
+        console.log(`⏭️ Skipping campaign "${campaign.name}" (${campaignId}) - status: "${campaign.status}"`);
         return false;
       }
       
-      // Exclude campaigns in the excluded list
-      const excludedList = (process.env.HOPLIX_EXCLUDED_CAMPAIGNS || '').split(',').map(s => s.trim()).filter(Boolean);
-      if (excludedList.includes(campaignId)) {
+      // If enabledCampaigns is set, only keep campaigns in that list
+      if (config.enabledCampaigns.length > 0 && !config.enabledCampaigns.includes(campaignId)) {
+        return false;
+      }
+      
+      // Exclude campaigns in the excluded list (includes ALWAYS_EXCLUDED_CAMPAIGNS)
+      if (config.excludedCampaigns.includes(campaignId)) {
         return false;
       }
       

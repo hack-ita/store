@@ -48,8 +48,9 @@ export default async function CampaignSection({
     // Single campaign - use existing logic
     const singleId = idsToFetch[0];
     const campaign = await hoplixService.getCampaign(singleId);
-    const campaignName = campaign?.name || title;
-    const campaignDescription = campaign?.description || subtitle;
+    // Only use campaign API data if title/subtitle were NOT explicitly provided
+    const campaignName = (title === "Campagna" ? campaign?.name : undefined) || title;
+    const campaignDescription = (subtitle === "Scopri i prodotti di questa campagna" ? campaign?.description : undefined) || subtitle;
     const products = await productService.getProductsByCampaign(singleId);
 
     console.log(`📦 CampaignSection - Found ${products.length} products for campaign "${campaignName}"`);
@@ -67,25 +68,14 @@ export default async function CampaignSection({
 
   // Multiple campaigns - fetch all and merge
   const products = await productService.getProductsByCampaigns(idsToFetch);
-  
-  // Fetch the first campaign's info for the title/subtitle if not provided
-  let displayTitle = title;
-  let displaySubtitle = subtitle;
-  if (idsToFetch.length > 0) {
-    const firstCampaign = await hoplixService.getCampaign(idsToFetch[0]);
-    if (firstCampaign) {
-      displayTitle = firstCampaign.name || title;
-      displaySubtitle = firstCampaign.description || subtitle;
-    }
-  }
 
   console.log(`📦 CampaignSection - Found ${products.length} products across ${idsToFetch.length} campaigns`);
 
   return (
     <CampaignSectionClient
       products={products}
-      title={displayTitle}
-      subtitle={displaySubtitle}
+      title={title}
+      subtitle={subtitle}
       campaignId={idsToFetch.join(',')}
       showWishlist={showWishlist}
     />

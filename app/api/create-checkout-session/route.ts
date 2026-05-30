@@ -5,7 +5,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(request: NextRequest) {
   try {
-    const { items, customer, shippingCost, tax } = await request.json();
+    const { items, customer, shippingCost, tax, discountSummary } = await request.json();
     
     console.log('🔍 ========== CHECKOUT SESSION CREATION ==========');
     console.log('📦 Received items from cart:', JSON.stringify(items, null, 2));
@@ -54,15 +54,52 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Prepare metadata for webhook (THIS IS THE IMPORTANT PART)
-    const itemsMetadata = items.map((item: any) => ({
+    // Hoplix CDN URLs embed the campaign ID: /showimaged/Front/{campaignId}/{slug}/
+    // Use this to recover missing campaignIds from stale cart items (e.g. from localStorage
+    // before a fix landed) without requiring the user to re-add the product.
+    function extractCampaignFromImage(imageUrl: string): string {
+      if (!imageUrl) return '';
+      const m = imageUrl.match(/showimaged\/Front\/(\d+)\//);
+      return m ? m[1] : '';
+    }
+
+    const resolvedItems = items.map((item: any) => {
+      if (item.campaignId) return item;
+      const recovered = extractCampaignFromImage(item.image || '');
+      if (recovered) {
+        console.log(`🔧 Recovered campaignId "${recovered}" from image URL for: ${item.name}`);
+        return { ...item, campaignId: recovered };
+      }
+      return item;
+    });
+
+    // After recovery, any item still missing campaignId cannot be fulfilled.
+    const missingCampaign = resolvedItems.filter((item: any) => !item.campaignId);
+    if (missingCampaign.length > 0) {
+      const names = missingCampaign.map((i: any) => i.name).join(', ');
+      console.error('❌ Checkout blocked — item(s) missing campaignId after recovery:', names);
+      return NextResponse.json(
+        { error: `Impossibile determinare la campagna per: ${names}. Rimuovili dal carrello e aggiungili di nuovo.` },
+        { status: 400 }
+      );
+    }
+
+    // Prepare metadata for webhook — keep this minimal to stay under Stripe's 500-char limit
+    const itemsMetadata = resolvedItems.map((item: any) => ({
       productId: item.productId,
-      campaignId: item.campaignId || process.env.HOPLIX_CAMPAIGN_ID || '00560566',
+      campaignId: item.campaignId,
       color: item.color || 'black',
       size: item.size || 'M',
       quantity: item.quantity,
       price: item.price,
     }));
+
+    // Guard against metadata overflow (Stripe limit: 500 chars per value)
+    const itemsJson = JSON.stringify(itemsMetadata);
+    if (itemsJson.length > 500) {
+      console.error('❌ items metadata too long:', itemsJson.length, 'chars');
+      return NextResponse.json({ error: 'Too many items or data too large' }, { status: 400 });
+    }
 
     console.log('📦 Saving to metadata:', JSON.stringify(itemsMetadata, null, 2));
 
@@ -75,7 +112,7 @@ export async function POST(request: NextRequest) {
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/cart`,
       customer_email: customer.email,
       metadata: {
-        items: JSON.stringify(itemsMetadata),
+        items: itemsJson,
         customerFirstName: customer.firstName || '',
         customerLastName: customer.lastName || '',
         customerPhone: customer.phone || '',
@@ -83,6 +120,7 @@ export async function POST(request: NextRequest) {
         customerCity: customer.city || '',
         customerPostalCode: customer.postalCode || '',
         customerCountry: customer.country || 'Italy',
+        discountSummary: discountSummary || '',
       },
     });
 

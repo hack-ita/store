@@ -28,11 +28,47 @@ export default function CheckoutPage() {
   });
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [addressWarning, setAddressWarning] = useState<string | null>(null);
+
+  const ZIP_PATTERNS: Record<string, { pattern: RegExp; example: string }> = {
+    Italy:          { pattern: /^\d{5}$/, example: '20121' },
+    France:         { pattern: /^\d{5}$/, example: '75001' },
+    Germany:        { pattern: /^\d{5}$/, example: '10115' },
+    Spain:          { pattern: /^\d{5}$/, example: '28001' },
+    'United Kingdom': { pattern: /^[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}$/i, example: 'SW1A 1AA' },
+    Netherlands:    { pattern: /^\d{4}\s?[A-Z]{2}$/i, example: '1234 AB' },
+    Belgium:        { pattern: /^\d{4}$/, example: '1000' },
+    Austria:        { pattern: /^\d{4}$/, example: '1010' },
+    Switzerland:    { pattern: /^\d{4}$/, example: '8001' },
+    Portugal:       { pattern: /^\d{4}-\d{3}$/, example: '1000-001' },
+    'United States': { pattern: /^\d{5}(-\d{4})?$/, example: '10001' },
+  };
+
+  function validateAddress(postalCode: string, country: string) {
+    const rule = ZIP_PATTERNS[country];
+    if (!rule || !postalCode) { setAddressWarning(null); return; }
+    if (!rule.pattern.test(postalCode.trim())) {
+      setAddressWarning(
+        `Il CAP "${postalCode}" non sembra valido per ${country}. Formato atteso: ${rule.example}`
+      );
+    } else {
+      setAddressWarning(null);
+    }
+  }
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalSaved = cartItems.reduce((sum, item) => {
+    if (item.originalPrice != null) {
+      return sum + (item.originalPrice - item.price) * item.quantity;
+    }
+    return sum;
+  }, 0);
   const shipping = subtotal > 50 ? 0 : 5.99;
   const tax = subtotal * 0.22;
   const total = subtotal + shipping + tax;
+
+  // Collect unique discount notes for display
+  const discountNotes = [...new Set(cartItems.map(i => i.discountNote).filter(Boolean))] as string[];
 
   const handleQuantityUpdate = (id: string, newQuantity: number) => {
     if (newQuantity < 1) return;
@@ -45,10 +81,17 @@ export default function CheckoutPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    setFormData(prev => ({
-      ...prev,
+    const next = {
+      ...formData,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
-    }));
+    };
+    setFormData(next);
+    if (name === 'postalCode' || name === 'country') {
+      validateAddress(
+        name === 'postalCode' ? value : next.postalCode,
+        name === 'country' ? value : next.country,
+      );
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,8 +113,13 @@ export default function CheckoutPage() {
             image: item.image,
             size: item.size,
             color: item.color,
-            campaignId: item.campaignId || '00560566',
+            campaignId: item.campaignId || '',
+            discountNote: item.discountNote || '',
+            originalPrice: item.originalPrice ?? item.price,
           })),
+          discountSummary: discountNotes.length > 0
+            ? discountNotes.join(', ') + ` | Saved: €${totalSaved.toFixed(2)}`
+            : '',
           customer: {
             firstName: formData.firstName,
             lastName: formData.lastName,
@@ -90,16 +138,18 @@ export default function CheckoutPage() {
       const data = await response.json();
 
       if (data.url) {
-        // Clear cart before redirecting to Stripe
         clearCart();
-        // Redirect to Stripe checkout
         window.location.href = data.url;
       } else {
-        throw new Error('No checkout URL received');
+        console.error('Checkout API error:', data.error);
+        throw new Error(data.error || 'No checkout URL received');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Checkout error:', error);
-      alert('Si è verificato un errore. Riprova più tardi.');
+      const msg = error?.message && !error.message.includes('fetch')
+        ? error.message
+        : 'Si è verificato un errore. Riprova più tardi.';
+      alert(msg);
     } finally {
       setIsProcessing(false);
     }
@@ -350,9 +400,27 @@ export default function CheckoutPage() {
                       <option value="France">Francia</option>
                       <option value="Germany">Germania</option>
                       <option value="Spain">Spagna</option>
+                      <option value="United Kingdom">Regno Unito</option>
+                      <option value="Netherlands">Paesi Bassi</option>
+                      <option value="Belgium">Belgio</option>
+                      <option value="Austria">Austria</option>
+                      <option value="Switzerland">Svizzera</option>
+                      <option value="Portugal">Portogallo</option>
+                      <option value="United States">Stati Uniti</option>
                     </select>
                   </div>
                 </div>
+
+                {addressWarning && (
+                  <div className="mt-4 flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-xl">
+                    <span className="text-amber-500 text-lg shrink-0">⚠️</span>
+                    <div>
+                      <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Verifica l&apos;indirizzo</p>
+                      <p className="text-sm text-amber-700 dark:text-amber-400 mt-0.5">{addressWarning}</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">Puoi procedere comunque, ma l&apos;ordine potrebbe essere rifiutato dal sistema di spedizione.</p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex gap-4 mt-6">
                   <button
@@ -365,9 +433,17 @@ export default function CheckoutPage() {
                   <button
                     type="submit"
                     disabled={isProcessing}
-                    className="flex-1 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`flex-1 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      addressWarning
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                        : 'bg-primary hover:bg-primary/90 text-white'
+                    }`}
                   >
-                    {isProcessing ? 'Elaborazione...' : `Procedi al pagamento €${total.toFixed(2)}`}
+                    {isProcessing
+                      ? 'Elaborazione...'
+                      : addressWarning
+                      ? `Indirizzo non verificato — procedi comunque €${total.toFixed(2)}`
+                      : `Procedi al pagamento €${total.toFixed(2)}`}
                   </button>
                 </div>
               </form>
@@ -385,6 +461,12 @@ export default function CheckoutPage() {
                   <span className="text-dark/70 dark:text-light/70">Subtotale</span>
                   <span className="font-medium">€{subtotal.toFixed(2)}</span>
                 </div>
+                {discountNotes.map(note => (
+                  <div key={note} className="flex justify-between text-green-600 dark:text-green-400">
+                    <span className="text-sm">🏷 {note}</span>
+                    <span className="text-sm font-medium">-€{totalSaved.toFixed(2)}</span>
+                  </div>
+                ))}
                 <div className="flex justify-between">
                   <span className="text-dark/70 dark:text-light/70">Spedizione</span>
                   <span className="font-medium">
@@ -400,6 +482,11 @@ export default function CheckoutPage() {
                     <span>Totale</span>
                     <span className="text-primary">€{total.toFixed(2)}</span>
                   </div>
+                  {totalSaved > 0 && (
+                    <p className="text-xs text-green-600 dark:text-green-400 text-right mt-1">
+                      Hai risparmiato €{totalSaved.toFixed(2)} con gli sconti applicati
+                    </p>
+                  )}
                 </div>
               </div>
 
