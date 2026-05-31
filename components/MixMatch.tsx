@@ -356,7 +356,7 @@ export default function MixMatch() {
             <div key={slot.type} className="flex justify-between items-center">
               {s ? (
                 <>
-                  <span className="text-dark/70 dark:text-light/70 truncate max-w-40">
+                    <span className="text-dark/80 dark:text-light/80 truncate max-w-40">
                     {s.product.name}
                     <span className="text-dark/40 dark:text-light/40 ml-1 text-xs">{s.color.name} / {s.size}</span>
                   </span>

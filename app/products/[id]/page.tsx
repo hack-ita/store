@@ -73,13 +73,30 @@ function transformCampaignProduct(campaign: any, campaignId: string, slug: strin
 
 export default async function ProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ campaign?: string }>;
 }) {
   const { id } = await params;
-  console.log(`🔍 Product page fetching: ${id}`);
+  const { campaign: campaignParam } = await searchParams;
+  console.log(`🔍 Product page fetching: ${id}` + (campaignParam ? ` from campaign: ${campaignParam}` : ''));
 
-  // Strategy 1: Search active campaigns first — returns campaign design images
+  // Strategy 1: If a specific campaign was requested via ?campaign= param, try that first
+  if (campaignParam) {
+    try {
+      const campaignData = await hoplixService.getCampaign(campaignParam);
+      const product = transformCampaignProduct(campaignData, campaignParam, id);
+      if (product) {
+        console.log(`✅ Found in requested campaign ${campaignParam}: ${product.name}`);
+        return <ProductDetailClient initialProduct={product} />;
+      }
+    } catch (err) {
+      console.error(`Error fetching requested campaign ${campaignParam}:`, err);
+    }
+  }
+
+  // Strategy 2: Search active campaigns — returns campaign design images
   try {
     const allCampaigns = await hoplixService.listCampaigns();
     for (const campaign of allCampaigns) {
@@ -101,7 +118,7 @@ export default async function ProductPage({
     console.error('Error searching campaigns:', err);
   }
 
-  // Strategy 2: Fall back to direct Hoplix catalog lookup
+  // Strategy 3: Fall back to direct Hoplix catalog lookup
   const directProduct = await productService.getProduct(id);
   if (directProduct) {
     console.log(`✅ Found via catalog lookup: ${directProduct.name}`);

@@ -75,7 +75,7 @@ export default function Header() {
           </div>
 
           <div className="lg:order-3 relative inline-block mr-3 lg:mr-0">
-            <label htmlFor="theme-selector" className="sr-only">Theme</label>
+            <label htmlFor="theme-selector" className="sr-only">Tema</label>
             <select
               id="theme-selector"
               className="appearance-none p-3 rounded-md border border-dark/20 bg-light text-dark dark:bg-dark dark:text-light dark:border-light/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -88,13 +88,14 @@ export default function Header() {
           </div>
           
           <div className="relative mr-3">
-            <Link href="/cart" className="relative p-2 hover:opacity-80 transition-opacity">
+            <Link href="/cart" className="relative p-2 hover:opacity-80 transition-opacity" aria-label={`Carrello${cartItemsCount > 0 ? ` (${cartItemsCount} articoli)` : ''}`}>
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
                 className="h-6 w-6 text-dark dark:text-light" 
                 fill="none" 
                 viewBox="0 0 24 24" 
                 stroke="currentColor"
+                aria-hidden="true"
               >
                 <path 
                   strokeLinecap="round" 
@@ -105,7 +106,7 @@ export default function Header() {
               </svg>
               
               {cartItemsCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-light text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-primary text-light text-xs rounded-full h-5 w-5 flex items-center justify-center" aria-hidden="true">
                   {cartItemsCount}
                 </span>
               )}
@@ -113,13 +114,14 @@ export default function Header() {
           </div>
           
           <div className="relative mr-3">
-            <Link href="/wishlist" className="relative p-2 hover:opacity-80 transition-opacity">
+            <Link href="/wishlist" className="relative p-2 hover:opacity-80 transition-opacity" aria-label={`Lista desideri${wishlistCount > 0 ? ` (${wishlistCount} articoli)` : ''}`}>
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
                 className="h-6 w-6 text-dark dark:text-light" 
                 fill="none" 
                 viewBox="0 0 24 24" 
                 stroke="currentColor"
+                aria-hidden="true"
               >
                 <path 
                   strokeLinecap="round" 
@@ -130,7 +132,7 @@ export default function Header() {
               </svg>
               
               {wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-light text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-primary text-light text-xs rounded-full h-5 w-5 flex items-center justify-center" aria-hidden="true">
                   {wishlistCount}
                 </span>
               )}

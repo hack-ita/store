@@ -237,7 +237,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex-1">
                         <Link
-                          href={`/products/${item.slug || item.productId}`}
+                          href={`/products/${item.slug || item.productId}${item.campaignId ? `?campaign=${item.campaignId}` : ''}`}
                           className="font-semibold text-dark dark:text-light hover:text-primary transition-colors"
                         >
                           {item.name}

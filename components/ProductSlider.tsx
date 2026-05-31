@@ -173,6 +173,7 @@ export default function ProductSlider({
                       badgeColor: product.badgeColor,
                       rating: product.rating,
                       reviews: product.reviews,
+                      campaignId: product.campaignId,
                     }}
                     red={red}
                     showWishlist={showWishlist}
@@ -196,6 +197,7 @@ export default function ProductSlider({
                     badgeColor: product.badgeColor,
                     rating: product.rating,
                     reviews: product.reviews,
+                    campaignId: product.campaignId,
                   }}
                   red={red}
                   showWishlist={showWishlist}

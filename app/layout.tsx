@@ -27,7 +27,7 @@ const ubuntu = Ubuntu({
 });
 
 export const metadata: Metadata = {
-  title: "HackITa Store",
+  title: "HackITa Store - Gadget Tecnologici Personalizzati",
   description: "Il tuo negozio online di gadget tecnologici personalizzati. Scopri t-shirt, tazze, cover per smartphone e molto altro, tutti con design unici e personalizzabili. Acquista ora e porta la tua passione tech sempre con te!",
 };
 
@@ -39,8 +39,10 @@ export default function RootLayout({
   const isProd = process.env.NODE_ENV === 'production';
 
   return (
-    <html lang="en" className={`${oswald.variable} ${ubuntu.variable}`}>
+    <html lang="it" className={`${oswald.variable} ${ubuntu.variable}`}>
       <head>
+        <link rel="preconnect" href="https://d29gv5mnjp8nf8.cloudfront.net" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://d29gv5mnjp8nf8.cloudfront.net" />
         {isProd && (
           <script dangerouslySetInnerHTML={{
             __html: `(function(){var n=function(){};['log','warn','info','debug','group','groupEnd','groupCollapsed','time','timeEnd','timeLog','table','count','countReset','dir','dirxml','assert'].forEach(function(m){console[m]=n;});})();`

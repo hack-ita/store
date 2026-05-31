@@ -72,18 +72,25 @@ export default function HeroSlider() {
       </div>
 
       {/* Optional: Minimal navigation dots */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3">
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-4">
         {heroImages.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
-            className={`w-2 h-2 rounded-full transition-all ${
+            className={`rounded-full transition-all flex items-center justify-center ${
               index === currentSlide
-                ? 'w-8 bg-light'
-                : 'bg-light/50 hover:bg-light/80'
+                ? 'w-12 h-3'
+                : 'w-6 h-6 hover:bg-light/20'
             }`}
-            aria-label={`Go to slide ${index + 1}`}
-          />
+            style={{ minWidth: '24px', minHeight: '24px' }}
+            aria-label={`Vai alla slide ${index + 1}`}
+          >
+            <span className={`rounded-full transition-all ${
+              index === currentSlide
+                ? 'w-8 h-3 bg-light'
+                : 'w-2 h-2 bg-light/50 hover:bg-light/80'
+            }`} />
+          </button>
         ))}
       </div>
 

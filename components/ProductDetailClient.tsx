@@ -120,7 +120,11 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
   );
   const [selectedColor, setSelectedColor] = useState(product?.colors?.[0]);
   const [quantity, setQuantity] = useState(1);
-  const [activeImage, setActiveImage] = useState(0);
+  const [activeImage, setActiveImage] = useState(
+    product?.colors?.[0] && product.images.length === product.colors.length
+      ? product.colors.findIndex((c) => c.name === product.colors[0].name)
+      : 0
+  );
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [isAdding, setIsAdding] = useState(false); // Add loading state
   const [addedMessage, setAddedMessage] = useState(false); // Show success message
@@ -278,7 +282,16 @@ export default function ProductDetailClient({ initialProduct }: ProductDetailCli
                     {product.colors.map(color => (
                       <button 
                         key={color.name} 
-                        onClick={() => setSelectedColor(color)} 
+                        onClick={() => {
+                          setSelectedColor(color);
+                          // If images array has one entry per color, sync the active image
+                          if (product.images.length === product.colors.length) {
+                            const colorIndex = product.colors.findIndex(c => c.name === color.name);
+                            if (colorIndex !== -1) {
+                              setActiveImage(colorIndex);
+                            }
+                          }
+                        }} 
                         className={`w-10 h-10 rounded-full border border-dark/20 dark:border-light/20 transition-all ${selectedColor?.name === color.name ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-dark scale-110' : 'hover:scale-105'}`}
                         style={{ backgroundColor: color.code }}
                         title={color.name}

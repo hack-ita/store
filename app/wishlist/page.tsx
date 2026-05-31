@@ -117,7 +117,7 @@ export default function WishlistPage() {
               className="group bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow"
             >
               {/* Product Image */}
-              <Link href={`/products/${item.slug}`} className="block relative aspect-square overflow-hidden">
+              <Link href={`/products/${item.slug}${item.campaignId ? `?campaign=${item.campaignId}` : ''}`} className="block relative aspect-square overflow-hidden">
                 <Image
                   src={item.image}
                   alt={item.name}
@@ -140,7 +140,7 @@ export default function WishlistPage() {
 
               {/* Product Info */}
               <div className="p-4">
-                <Link href={`/products/${item.slug}`}>
+                <Link href={`/products/${item.slug}${item.campaignId ? `?campaign=${item.campaignId}` : ''}`}>
                   <h3 className="font-semibold text-dark dark:text-light hover:text-primary transition-colors line-clamp-2 mb-2">
                     {item.name}
                   </h3>

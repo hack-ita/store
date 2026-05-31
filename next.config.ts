@@ -18,6 +18,10 @@ const nextConfig: NextConfig = {
     ],
   },
   staticPageGenerationTimeout: 120,
+  compress: true,
+  experimental: {
+    optimizePackageImports: ['swiper', 'zustand', 'dompurify'],
+  },
 };
 
 export default nextConfig;
