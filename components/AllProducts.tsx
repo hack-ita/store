@@ -58,13 +58,13 @@ function transformProduct(p: any, campaignId: string, campaignName?: string): Ma
   
   if (nameLower.includes('hoodie') || nameLower.includes('felpa')) {
     badge = '⭐ Best Seller';
-    badgeColor = 'text-yellow-500';
+    badgeColor = 'text-primary';
   } else if (nameLower.includes('new') || nameLower.includes('nuov')) {
     badge = '🔥 Novità';
-    badgeColor = 'text-orange-500';
+    badgeColor = 'text-primary';
   } else if (nameLower.includes('sale') || nameLower.includes('offer')) {
     badge = '💸 Sconto';
-    badgeColor = 'text-green-500';
+    badgeColor = 'text-primary';
   }
 
   return {

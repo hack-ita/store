@@ -41,7 +41,7 @@ const SLOTS: SlotConfig[] = [
     subLabel: 'Scegli il tuo copricapo',
     emoji: '🧢',
     campaignIds: ["00576615"],
-    iconBg: 'bg-purple-50 dark:bg-purple-900/20',
+    iconBg: 'bg-primary/5',
   },
   {
     type: 'top',
@@ -49,7 +49,7 @@ const SLOTS: SlotConfig[] = [
     subLabel: 'Scegli la parte superiore',
     emoji: '👕',
     campaignIds: ["00576556", "00576559", "00576585"],
-    iconBg: 'bg-teal-50 dark:bg-teal-900/20',
+    iconBg: 'bg-primary/5',
   },
   {
     type: 'bottom',
@@ -57,7 +57,7 @@ const SLOTS: SlotConfig[] = [
     subLabel: 'Scegli la parte inferiore',
     emoji: '👖',
     campaignIds: ["00576610"],
-    iconBg: 'bg-orange-50 dark:bg-orange-900/20',
+    iconBg: 'bg-primary/5',
   },
 ];
 
@@ -384,8 +384,8 @@ export default function MixMatch() {
       </div>
 
       {allSelected && (
-        <div className="bg-green-50 dark:bg-green-900/20 rounded-xl px-4 py-2.5 text-center">
-          <p className="text-green-700 dark:text-green-400 text-sm font-medium">
+        <div className="bg-primary/5 rounded-xl px-4 py-2.5 text-center">
+          <p className="text-primary text-sm font-medium">
             Risparmi €{savings.toFixed(2)} — 10% di sconto sul bundle
           </p>
         </div>
@@ -443,7 +443,7 @@ export default function MixMatch() {
           <div className="max-w-xs mx-auto mb-10">
             <div className="flex justify-between text-xs text-light/50 dark:text-dark/50 mb-2">
               <span>{selectedCount} di 3 selezionati</span>
-              {allSelected && <span className="text-green-600 dark:text-green-400 font-medium">Bundle sbloccato!</span>}
+              {allSelected && <span className="text-primary font-medium">Bundle sbloccato!</span>}
             </div>
             <div className="h-1.5 bg-dark/10 dark:bg-light/10 rounded-full overflow-hidden">
               <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${progressPct}%` }} />
@@ -455,14 +455,14 @@ export default function MixMatch() {
               <div key={slot.type} className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200 ${
-                    selections[slot.type] ? 'bg-green-500 text-white'
+                    selections[slot.type] ? 'bg-primary text-white'
                     : openPicker === slot.type ? 'bg-primary text-white'
                     : 'bg-dark/10 dark:bg-light/10 text-dark/50 dark:text-light/50'
                   }`}>
                     {selections[slot.type] ? '✓' : i + 1}
                   </div>
                   <span className={`text-sm hidden sm:block transition-colors ${
-                    selections[slot.type] ? 'text-green-600 dark:text-green-400 font-medium' : 'text-dark/50 dark:text-light/50'
+                    selections[slot.type] ? 'text-primary font-medium' : 'text-dark/50 dark:text-light/50'
                   }`}>{slot.label}</span>
                 </div>
                 {i < 2 && <div className="w-8 h-px bg-dark/20 dark:bg-light/20" />}
@@ -493,7 +493,7 @@ export default function MixMatch() {
                       </div>
                       <span className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
                         isOpen ? 'bg-primary/10 text-primary'
-                        : selected ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                        : selected ? 'bg-primary/5 text-primary'
                         : 'bg-dark/5 dark:bg-light/5 text-dark/50 dark:text-light/50 group-hover:bg-primary/10 group-hover:text-primary'
                       }`}>
                         {isOpen ? 'Chiudi' : selected ? 'Cambia' : 'Sfoglia'}

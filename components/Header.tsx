@@ -78,7 +78,7 @@ export default function Header() {
             <label htmlFor="theme-selector" className="sr-only">Tema</label>
             <select
               id="theme-selector"
-              className="appearance-none p-3 rounded-md border border-dark/20 bg-light text-dark dark:bg-dark dark:text-light dark:border-light/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="appearance-none p-3 rounded-md border border-dark/20 bg-light text-dark dark:bg-dark dark:text-light dark:border-light/20 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
               value={theme}
               onChange={(e) => handleThemeChange(e.target.value as 'light' | 'dark')}
             >

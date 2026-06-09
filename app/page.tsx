@@ -20,7 +20,7 @@ export default function Home() {
       <div>
         <ProductCustomizer />
         <CampaignSection
-          campaignIds={["00576621", "00576619", "00576618", "00576617", "00576612"]}
+          campaignIds={["00576621", "00576619", "00576618", "00576617", "00576612", "00580303"]}
           title="Accessori"
           subtitle=""
           showWishlist={true}

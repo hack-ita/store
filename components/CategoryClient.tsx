@@ -125,7 +125,7 @@ export default function CategoryClient({ initialCampaign, initialProducts, slug 
                   price: product.price,
                   originalPrice: product.originalPrice,
                   badge: product.badge || (product.originalPrice ? '💸 In Offerta' : ''),
-                  badgeColor: product.badgeColor || (product.originalPrice ? 'text-green-500' : 'text-orange-500'),
+                  badgeColor: product.badgeColor || (product.originalPrice ? 'text-primary' : 'text-primary'),
                   rating: product.rating || 4.5,
                   reviews: product.reviews || 0,
                   campaignId: product.campaignId,

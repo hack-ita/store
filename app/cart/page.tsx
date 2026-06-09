@@ -63,8 +63,8 @@ export default function CheckoutPage() {
     }
     return sum;
   }, 0);
-  const shipping = subtotal > 50 ? 0 : 5.99;
-  const tax = subtotal * 0.22;
+  const shipping = 0;
+  const tax = 0;
   const total = subtotal + shipping + tax;
 
   // Collect unique discount notes for display
@@ -412,12 +412,12 @@ export default function CheckoutPage() {
                 </div>
 
                 {addressWarning && (
-                  <div className="mt-4 flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-xl">
-                    <span className="text-amber-500 text-lg shrink-0">⚠️</span>
+                  <div className="mt-4 flex items-start gap-3 p-4 bg-primary/5 border border-primary/30 rounded-xl">
+                    <span className="text-primary text-lg shrink-0">⚠️</span>
                     <div>
-                      <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Verifica l&apos;indirizzo</p>
-                      <p className="text-sm text-amber-700 dark:text-amber-400 mt-0.5">{addressWarning}</p>
-                      <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">Puoi procedere comunque, ma l&apos;ordine potrebbe essere rifiutato dal sistema di spedizione.</p>
+                      <p className="text-sm font-semibold text-primary">Verifica l'indirizzo</p>
+                      <p className="text-sm text-dark/70 dark:text-light/70 mt-0.5">{addressWarning}</p>
+                      <p className="text-xs text-dark/50 dark:text-light/50 mt-1">Puoi procedere comunque, ma l'ordine potrebbe essere rifiutato dal sistema di spedizione.</p>
                     </div>
                   </div>
                 )}
@@ -435,7 +435,7 @@ export default function CheckoutPage() {
                     disabled={isProcessing}
                     className={`flex-1 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                       addressWarning
-                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                        ? 'bg-primary hover:bg-primary/80 text-white'
                         : 'bg-primary hover:bg-primary/90 text-white'
                     }`}
                   >
@@ -462,20 +462,18 @@ export default function CheckoutPage() {
                   <span className="font-medium">€{subtotal.toFixed(2)}</span>
                 </div>
                 {discountNotes.map(note => (
-                  <div key={note} className="flex justify-between text-green-600 dark:text-green-400">
+                  <div key={note} className="flex justify-between text-primary">
                     <span className="text-sm">🏷 {note}</span>
                     <span className="text-sm font-medium">-€{totalSaved.toFixed(2)}</span>
                   </div>
                 ))}
                 <div className="flex justify-between">
                   <span className="text-dark/70 dark:text-light/70">Spedizione</span>
-                  <span className="font-medium">
-                    {shipping === 0 ? 'Gratuita' : `€${shipping.toFixed(2)}`}
-                  </span>
-                </div>
+                  <span className="font-medium">Gratuita</span>
+                </div>  
                 <div className="flex justify-between">
                   <span className="text-dark/70 dark:text-light/70">IVA (22%)</span>
-                  <span className="font-medium">€{tax.toFixed(2)}</span>
+                  <span className="font-medium">€0.00</span>
                 </div>
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
                   <div className="flex justify-between text-lg font-bold">
@@ -483,7 +481,7 @@ export default function CheckoutPage() {
                     <span className="text-primary">€{total.toFixed(2)}</span>
                   </div>
                   {totalSaved > 0 && (
-                    <p className="text-xs text-green-600 dark:text-green-400 text-right mt-1">
+                    <p className="text-xs text-primary text-right mt-1">
                       Hai risparmiato €{totalSaved.toFixed(2)} con gli sconti applicati
                     </p>
                   )}
@@ -492,7 +490,7 @@ export default function CheckoutPage() {
 
               <div className="mt-6 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <p className="text-sm text-dark/60 dark:text-light/60 text-center">
-                  🚚 Spedizione gratuita per ordini superiori a €50
+                  🚚 Spedizione gratuita
                 </p>
               </div>
             </div>

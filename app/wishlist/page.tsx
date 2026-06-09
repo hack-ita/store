@@ -156,7 +156,7 @@ export default function WishlistPage() {
                   onClick={() => handleAddToCart(item)}
                   className={`w-full py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
                     addedToCart.includes(item.id)
-                      ? 'bg-green-500 text-white'
+                      ? 'bg-primary text-white'
                       : 'bg-primary/10 text-primary hover:bg-primary hover:text-white'
                   }`}
                 >

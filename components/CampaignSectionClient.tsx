@@ -122,13 +122,7 @@ function ProductCardItem({ product, index, campaignId }: {
 
           {/* Badge */}
           {product.badge && (
-            <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold shadow-lg ${
-              product.badgeColor === 'text-yellow-500'
-                ? 'bg-yellow-400 text-yellow-900'
-                : product.badgeColor === 'text-green-500'
-                ? 'bg-green-400 text-green-900'
-                : 'bg-orange-400 text-orange-900'
-            }`}>
+            <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-bold shadow-lg bg-primary text-white`}>
               {product.badge}
             </div>
           )}

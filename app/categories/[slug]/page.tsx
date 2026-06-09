@@ -102,7 +102,7 @@ export default async function CategoryPage({
         images: images,
         category: campaignDetail.name,
         categorySlug: slug,
-        badgeColor: 'text-orange-500',
+        badgeColor: 'text-primary',
         description: campaignDetail.description || '',
         features: [
           `Available Colors: ${p['product-color'] || ''}`,

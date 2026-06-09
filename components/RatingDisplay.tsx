@@ -63,7 +63,7 @@ export default function RatingDisplay({
               onMouseLeave={() => interactive && setHoverRating(0)}
               className={`${starSize} transition-all ${
                 interactive ? 'cursor-pointer hover:scale-125' : 'cursor-default'
-              } ${isFilled || isHalf ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
+              } ${isFilled || isHalf ? 'text-primary' : 'text-gray-300 dark:text-gray-600'}`}
               aria-label={`${star} star${star > 1 ? 's' : ''}`}
             >
               <svg
