@@ -435,7 +435,7 @@ export default function ProductCustomizer() {
             </div>
 
             {/* RIGHT PANEL - Selection Tabs */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl dark:shadow-xl overflow-hidden transition-colors duration-300">
+            <div className="bg-white dark:bg-dark rounded-2xl shadow-2xl dark:shadow-xl overflow-hidden transition-colors duration-300">
               <div className="p-8 space-y-4">
 
                 {/* HackITa Brand Header */}
@@ -451,7 +451,7 @@ export default function ProductCustomizer() {
                   onClick={() => setActiveModal('product')}
                   className="w-full group"
                 >
-                  <div className="flex items-center justify-between p-5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-primary/20 rounded-xl transition-all">
+                  <div className="flex items-center justify-between p-5 bg-gray-50 dark:bg-light/10 hover:bg-gray-100 dark:hover:bg-primary/20 rounded-xl transition-all">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                         👕
@@ -475,7 +475,7 @@ export default function ProductCustomizer() {
                     onClick={() => setActiveModal('size')}
                     className="w-full group"
                   >
-                    <div className="flex items-center justify-between p-5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-primary/20 rounded-xl transition-all">
+                    <div className="flex items-center justify-between p-5 bg-gray-50 dark:bg-light/10 hover:bg-gray-100 dark:hover:bg-primary/20 rounded-xl transition-all">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                           📏
@@ -500,7 +500,7 @@ export default function ProductCustomizer() {
                     onClick={() => setActiveModal('color')}
                     className="w-full group"
                   >
-                    <div className="flex items-center justify-between p-5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-primary/20 rounded-xl transition-all">
+                    <div className="flex items-center justify-between p-5 bg-gray-50 dark:bg-light/10 hover:bg-gray-100 dark:hover:bg-primary/20 rounded-xl transition-all">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                           🎨
@@ -543,7 +543,7 @@ export default function ProductCustomizer() {
                 </div>
 
                 {/* Quantity Selector */}
-                <div className="p-5 bg-gray-50 dark:bg-gray-800 rounded-xl transition-colors">
+                <div className="p-5 bg-gray-50 dark:bg-light/10 rounded-xl transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-2xl">
@@ -619,7 +619,7 @@ export default function ProductCustomizer() {
       {/* MODAL - Product Selection */}
       {activeModal === 'product' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 dark:bg-black/80 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden animate-fadeIn shadow-2xl transition-colors">
+          <div className="bg-white dark:bg-dark rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden animate-fadeIn shadow-2xl transition-colors">
             <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Scegli Prodotto</h2>
               <button
@@ -643,7 +643,7 @@ export default function ProductCustomizer() {
                           : 'border-gray-200 dark:border-gray-700 hover:border-primary/50 dark:hover:border-primary/50'
                       }`}
                     >
-                      <div className="aspect-square relative mb-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="aspect-square relative mb-3 bg-gray-50 dark:bg-light/10 rounded-lg">
                         <Image
                           src={previewImage}
                           alt={product.name}
@@ -667,7 +667,7 @@ export default function ProductCustomizer() {
       {/* MODAL - Size Selection */}
       {activeModal === 'size' && selectedProduct && selectedProduct.availableSizes.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 dark:bg-black/80 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-md w-full animate-fadeIn shadow-2xl transition-colors">
+          <div className="bg-white dark:bg-dark rounded-2xl max-w-md w-full animate-fadeIn shadow-2xl transition-colors">
             <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Scegli Taglia</h2>
               <button
@@ -704,7 +704,7 @@ export default function ProductCustomizer() {
       {/* MODAL - Color Selection */}
       {activeModal === 'color' && selectedProduct && selectedProduct.availableColors.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 dark:bg-black/80 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-md w-full animate-fadeIn shadow-2xl transition-colors">
+          <div className="bg-white dark:bg-dark rounded-2xl max-w-md w-full animate-fadeIn shadow-2xl transition-colors">
             <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Scegli Colore</h2>
               <button
@@ -744,7 +744,7 @@ export default function ProductCustomizer() {
       {/* MODAL - Size Chart */}
       {activeModal === 'size-chart' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 dark:bg-black/80 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden animate-fadeIn shadow-2xl transition-colors">
+          <div className="bg-white dark:bg-dark rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden animate-fadeIn shadow-2xl transition-colors">
             <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Guida alle Taglie</h2>
               <button
@@ -775,7 +775,7 @@ export default function ProductCustomizer() {
                   </tbody>
                 </table>
               </div>
-              <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs text-gray-500 dark:text-gray-400">
+              <div className="mt-4 p-3 bg-gray-50 dark:bg-light/10 rounded-lg text-xs text-gray-500 dark:text-gray-400">
                 <p>⚠️ Le misure sono in centimetri e possono variare leggermente a seconda del capo.</p>
               </div>
             </div>

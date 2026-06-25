@@ -98,7 +98,7 @@ function VariantModal({ type, product, onConfirm, onCancel }: VariantModalProps)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-md w-full shadow-2xl">
+      <div className="bg-white dark:bg-dark rounded-2xl max-w-md w-full shadow-2xl">
 
         <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-bold text-gray-800 dark:text-white">Personalizza {product.name}</h2>
@@ -109,7 +109,7 @@ function VariantModal({ type, product, onConfirm, onCancel }: VariantModalProps)
 
           {/* Live product preview */}
           <div className="flex justify-center">
-            <div className="relative w-36 h-36 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 border border-dark/10 dark:border-light/10">
+            <div className="relative w-36 h-36 rounded-xl overflow-hidden bg-gray-100 dark:bg-light/10 border border-dark/10 dark:border-light/10">
               <Image key={previewImage} src={previewImage} alt={product.name} fill className="object-cover" unoptimized />
             </div>
           </div>
@@ -480,7 +480,7 @@ export default function MixMatch() {
                 const slotProducts = products[slot.type];
 
                 return (
-                  <div key={slot.type} className={`bg-white dark:bg-gray-900 rounded-2xl border transition-all duration-200 overflow-hidden ${
+                  <div key={slot.type} className={`bg-white dark:bg-dark rounded-2xl border transition-all duration-200 overflow-hidden ${
                     isOpen ? 'border-primary shadow-lg shadow-primary/10' : 'border-dark/10 dark:border-light/10'
                   }`}>
                     <button onClick={() => handleTogglePicker(slot.type)} className="w-full flex items-center justify-between p-4 text-left group">
@@ -502,7 +502,7 @@ export default function MixMatch() {
 
                     {selected && !isOpen && (
                       <div className="flex items-center gap-3 px-4 pb-4">
-                        <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 border border-dark/10 dark:border-light/10 shrink-0 relative">
+                        <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 dark:bg-light/10 border border-dark/10 dark:border-light/10 shrink-0 relative">
                           <Image src={selected.displayImage} alt={selected.product.name} fill className="object-cover" sizes="56px" unoptimized />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -523,7 +523,7 @@ export default function MixMatch() {
                     )}
 
                     {isOpen && (
-                      <div className="border-t border-dark/10 dark:border-light/10 bg-gray-50 dark:bg-gray-800/50 p-4">
+                      <div className="border-t border-dark/10 dark:border-light/10 bg-gray-50 dark:bg-light/10 p-4">
                         {isLoadingSlot ? (
                           <div className="flex items-center justify-center py-8 gap-2 text-dark/50 dark:text-light/50 text-sm">
                             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -541,10 +541,10 @@ export default function MixMatch() {
                                   onClick={() => handleProductClick(slot.type, product)}
                                   className={`rounded-xl border p-2.5 text-left transition-all duration-150 ${
                                     isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                                    : 'border-dark/10 dark:border-light/10 bg-white dark:bg-gray-900 hover:border-primary/50'
+                                    : 'border-dark/10 dark:border-light/10 bg-white dark:bg-light/10 hover:border-primary/50'
                                   }`}
                                 >
-                                  <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 relative mb-2">
+                                  <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-light/10 relative mb-2">
                                     <Image src={product.image} alt={product.name} fill className="object-cover" sizes="(max-width: 640px) 30vw, 15vw" unoptimized />
                                     {isSelected && (
                                       <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
@@ -570,15 +570,15 @@ export default function MixMatch() {
                 );
               })}
 
-              <div className="hidden lg:block bg-white dark:bg-gray-900 rounded-2xl border border-dark/10 dark:border-light/10 p-5">
+              <div className="hidden lg:block bg-white dark:bg-dark rounded-2xl border border-dark/10 dark:border-light/10 p-5">
                 <SummaryContent />
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-dark/10 dark:border-light/10 p-5 flex flex-col gap-4 lg:sticky lg:top-24 lg:col-span-3">
+            <div className="bg-white dark:bg-dark rounded-2xl border border-dark/10 dark:border-light/10 p-5 flex flex-col gap-4 lg:sticky lg:top-24 lg:col-span-3">
               <h3 className="font-bold text-dark dark:text-light">Il tuo outfit</h3>
 
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 flex flex-col items-center gap-2 min-h-40 justify-center">
+              <div className="bg-gray-50 dark:bg-light/10 rounded-xl p-4 flex flex-col items-center gap-2 min-h-40 justify-center">
                 {selectedCount === 0 ? (
                   <p className="text-xs text-dark/40 dark:text-light/40 text-center">Seleziona gli articoli per visualizzare il tuo look</p>
                 ) : (

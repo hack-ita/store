@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 
 const heroImages = [
@@ -39,12 +39,65 @@ export default function HeroSlider() {
     return () => clearInterval(timer);
   }, [nextSlide]);
 
+  // --- Gesture navigation: horizontal mouse/trackpad scroll (desktop) + swipe (touch) ---
+  const wheelLock = useRef(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      // Only react to horizontal scroll intent so vertical page scroll stays intact.
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) || Math.abs(e.deltaX) < 20) return;
+      if (wheelLock.current) return;
+      wheelLock.current = true;
+      if (e.deltaX > 0) {
+        nextSlide();
+      } else {
+        prevSlide();
+      }
+      // Cooldown to avoid skipping multiple slides on a single fling.
+      setTimeout(() => {
+        wheelLock.current = false;
+      }, 600);
+    },
+    [nextSlide, prevSlide]
+  );
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (touchStartX.current === null || touchStartY.current === null) return;
+      const dx = e.changedTouches[0].clientX - touchStartX.current;
+      const dy = e.changedTouches[0].clientY - touchStartY.current;
+      // Require a mostly-horizontal swipe past a threshold.
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx < 0) {
+          nextSlide();
+        } else {
+          prevSlide();
+        }
+      }
+      touchStartX.current = null;
+      touchStartY.current = null;
+    },
+    [nextSlide, prevSlide]
+  );
+
   if (totalSlides === 0) {
     return null;
   }
 
   return (
-    <section className="relative w-full h-screen overflow-hidden">
+    <section
+      className="relative w-full aspect-video mt-31 lg:mt-0 lg:aspect-auto lg:h-screen overflow-hidden touch-pan-y select-none"
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="relative w-full h-full">
         {heroImages.map((image, index) => (
           <div
